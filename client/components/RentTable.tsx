@@ -2,11 +2,13 @@ import { Button } from '@/components/ui/button';
 import type { RentPayment } from '@/types/index';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export interface RentTableProps {
   payments: RentPayment[];
-  onUpdateStatus?: (rentId: number, status: 'paid' | 'pending' | 'partial') => void;
-  onMarkPaid?: (rentId: number) => void;
+  onUpdateStatus?: (rentId: number, status: 'paid' | 'pending' | 'partial') => Promise<void>;
+  onMarkPaid?: (rentId: number) => Promise<void>;
+  isEditable?: boolean;
 }
 
 function getStatusColor(status: string) {
@@ -20,7 +22,8 @@ function getStatusColor(status: string) {
   }
 }
 
-export function RentTable({ payments, onMarkPaid }: RentTableProps) {
+export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTableProps) {
+  const [loading, setLoading] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   if (payments.length === 0) {
