@@ -152,6 +152,19 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Quick Actions */}
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h2 className="text-lg font-bold text-blue-900 mb-4">Management</h2>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/admin/properties">
+              <Button className="gap-2">
+                <Settings className="w-4 h-4" />
+                Manage Properties
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-6">
