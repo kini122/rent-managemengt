@@ -117,4 +117,21 @@
     overflow-x: auto;
     white-space: pre;
   }
+
+  textarea {
+    @apply border border-input rounded-lg bg-background text-foreground;
+  }
+
+  input[type="date"],
+  input[type="number"],
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    @apply border border-input rounded-lg bg-background text-foreground px-3 py-2;
+  }
+
+  input:focus,
+  textarea:focus {
+    @apply ring-2 ring-ring outline-none;
+  }
 }
