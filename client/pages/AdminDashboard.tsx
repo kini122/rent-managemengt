@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
+import { insertSampleData } from '@/services/sampleData';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Settings } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
