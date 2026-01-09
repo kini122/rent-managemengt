@@ -65,52 +65,58 @@ export function useProperties() {
 
 export function usePropertyDetail(propertyId: number) {
   const [property, setProperty] = useState<Property | null>(null);
-  const [tenancy, setTenancy] = useState<Tenancy & { tenant: Tenant } | null>(null);
+  const [tenancy, setTenancy] = useState<(Tenancy & { tenant: Tenant }) | null>(null);
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: propertyData, error: propertyError } = await supabase
-          .from('properties')
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('property_id', propertyId)
+        .single();
+
+      if (propertyError) throw propertyError;
+      setProperty(propertyData);
+
+      const { data: tenancyData, error: tenancyError } = await supabase
+        .from('tenancies')
+        .select('*, tenant:tenants(*)')
+        .eq('property_id', propertyId)
+        .is('end_date', null)
+        .single();
+
+      if (tenancyData) {
+        setTenancy(tenancyData);
+
+        const { data: paymentsData } = await supabase
+          .from('rent_payments')
           .select('*')
-          .eq('property_id', propertyId)
-          .single();
+          .eq('tenancy_id', tenancyData.tenancy_id)
+          .order('rent_month', { ascending: false });
 
-        if (propertyError) throw propertyError;
-        setProperty(propertyData);
-
-        const { data: tenancyData, error: tenancyError } = await supabase
-          .from('tenancies')
-          .select('*, tenant:tenants(*)')
-          .eq('property_id', propertyId)
-          .is('end_date', null)
-          .limit(1);
-
-        if (!tenancyError && tenancyData?.length) {
-          setTenancy(tenancyData[0]);
-
-          const { data: paymentsData, error: paymentsError } = await supabase
-            .from('rent_payments')
-            .select('*')
-            .eq('tenancy_id', tenancyData[0].tenancy_id)
-            .order('rent_month', { ascending: false });
-
-          if (!paymentsError) {
-            setRentPayments(paymentsData || []);
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch property details');
-      } finally {
-        setLoading(false);
+        setRentPayments(paymentsData || []);
+      } else {
+        setTenancy(null);
+        setRentPayments([]);
       }
-    };
 
-    fetchData();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch property details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (propertyId) {
+      fetchData();
+    }
   }, [propertyId]);
 
-  return { property, tenancy, rentPayments, loading, error };
+  return { property, tenancy, rentPayments, loading, error, refetch: fetchData };
 }
