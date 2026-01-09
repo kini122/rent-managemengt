@@ -1,0 +1,71 @@
+-- Create properties table
+CREATE TABLE properties (
+  property_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  address TEXT NOT NULL,
+  details TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create tenants table
+CREATE TABLE tenants (
+  tenant_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name TEXT NOT NULL,
+  phone TEXT,
+  id_proof TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create tenancies table
+CREATE TABLE tenancies (
+  tenancy_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  property_id BIGINT NOT NULL REFERENCES properties(property_id) ON DELETE CASCADE,
+  tenant_id BIGINT NOT NULL REFERENCES tenants(tenant_id) ON DELETE CASCADE,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  monthly_rent DECIMAL(10, 2) NOT NULL,
+  advance_amount DECIMAL(10, 2) DEFAULT 0,
+  status TEXT CHECK (status IN ('active', 'completed', 'terminated')) DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create rent_payments table
+CREATE TABLE rent_payments (
+  rent_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  tenancy_id BIGINT NOT NULL REFERENCES tenancies(tenancy_id) ON DELETE CASCADE,
+  rent_month DATE NOT NULL,
+  rent_amount DECIMAL(10, 2) NOT NULL,
+  payment_status TEXT CHECK (payment_status IN ('paid', 'pending', 'partial')) DEFAULT 'pending',
+  paid_date DATE,
+  remarks TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_tenancies_property_id ON tenancies(property_id);
+CREATE INDEX idx_tenancies_tenant_id ON tenancies(tenant_id);
+CREATE INDEX idx_rent_payments_tenancy_id ON rent_payments(tenancy_id);
+CREATE INDEX idx_rent_payments_status ON rent_payments(payment_status);
+
+-- Enable Row Level Security
+ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rent_payments ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for authenticated users (read-only)
+CREATE POLICY "Allow read access to all authenticated users" ON properties
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow read access to all authenticated users" ON tenants
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow read access to all authenticated users" ON tenancies
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Allow read access to all authenticated users" ON rent_payments
+  FOR SELECT TO authenticated USING (true);
+
+-- TODO: Create admin-specific policies for INSERT/UPDATE/DELETE
+-- This requires setting up admin role and auth policies
