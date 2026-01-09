@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Settings } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
 
 interface PendingRentRow {
