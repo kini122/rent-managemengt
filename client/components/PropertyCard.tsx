@@ -15,21 +15,27 @@ function getStatusColor(pendingCount: number) {
 export function PropertyCard({ property }: PropertyCardProps) {
   const tenantName = property.tenancy?.tenant?.name || 'Vacant';
   const statusColor = getStatusColor(property.pending_count);
+  const isTenantOccupied = !!property.tenancy;
 
   return (
     <Link to={`/property/${property.property_id}`}>
-      <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all cursor-pointer h-full">
-        {/* Status Badge */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900">{property.address}</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              {property.details && `${property.details.substring(0, 40)}...`}
-            </p>
+      <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer h-full flex flex-col">
+        {/* Header with Address and Status Badge */}
+        <div className="flex items-start justify-between mb-4 gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">
+              {property.address}
+            </h3>
+            {property.details && (
+              <p className="text-sm text-slate-500 mt-1 line-clamp-2">
+                {property.details}
+              </p>
+            )}
           </div>
+          {/* Status Badge */}
           <div
             className={cn(
-              'inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-bold',
+              'flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full text-white text-sm font-bold',
               statusColor.badge
             )}
           >
@@ -37,24 +43,35 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
         </div>
 
-        {/* Tenant Info */}
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Tenant Info Section */}
         <div className="mt-4 pt-4 border-t border-slate-100">
-          <p className="text-sm text-slate-600">Current Tenant</p>
-          <p className="text-base font-medium text-slate-900 mt-1">{tenantName}</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+            Current Tenant
+          </p>
+          <p className={cn('text-base font-semibold mt-1',
+            isTenantOccupied ? 'text-slate-900' : 'text-amber-600'
+          )}>
+            {tenantName}
+          </p>
         </div>
 
         {/* Rent Status Indicator */}
         <div className="mt-4">
           <div
             className={cn(
-              'inline-block px-3 py-1 rounded-full text-xs font-medium',
+              'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold',
               statusColor.bg,
               statusColor.text
             )}
           >
-            {property.pending_count === 0
-              ? '✓ All Rents Paid'
-              : `⚠ ${property.pending_count} Rent${property.pending_count > 1 ? 's' : ''} Pending`}
+            {property.pending_count === 0 && isTenantOccupied
+              ? '✓ All Paid'
+              : property.pending_count > 0
+                ? `⚠ ${property.pending_count} Pending`
+                : '○ Vacant'}
           </div>
         </div>
       </div>
