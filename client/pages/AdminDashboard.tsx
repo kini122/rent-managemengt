@@ -163,6 +163,14 @@ export default function AdminDashboard() {
                 Manage Properties
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              onClick={() => insertSampleData()}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Load Sample Data
+            </Button>
           </div>
         </div>
 
