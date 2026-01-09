@@ -7,51 +7,60 @@ export function useProperties() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const { data: propertiesData, error: propertiesError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('is_active', true);
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('is_active', true)
+        .order('property_id', { ascending: false });
 
-        if (propertiesError) throw propertiesError;
+      if (propertiesError) throw propertiesError;
 
-        const enrichedProperties: PropertyWithTenant[] = await Promise.all(
-          (propertiesData || []).map(async (property) => {
-            const { data: tenancyData } = await supabase
-              .from('tenancies')
-              .select('*, tenant:tenants(*)')
-              .eq('property_id', property.property_id)
-              .is('end_date', null)
-              .limit(1);
+      const enrichedProperties: PropertyWithTenant[] = await Promise.all(
+        (propertiesData || []).map(async (property) => {
+          const { data: tenancyData } = await supabase
+            .from('tenancies')
+            .select('*, tenant:tenants(*)')
+            .eq('property_id', property.property_id)
+            .is('end_date', null)
+            .limit(1)
+            .single();
 
+          let pending_count = 0;
+          if (tenancyData) {
             const { data: rentData } = await supabase
               .from('rent_payments')
-              .select('payment_status')
-              .eq('tenancy_id', tenancyData?.[0]?.tenancy_id || 0)
+              .select('rent_id', { count: 'exact' })
+              .eq('tenancy_id', tenancyData.tenancy_id)
               .neq('payment_status', 'paid');
 
-            return {
-              ...property,
-              tenancy: tenancyData?.[0],
-              pending_count: rentData?.length || 0,
-            };
-          })
-        );
+            pending_count = rentData?.length || 0;
+          }
 
-        setProperties(enrichedProperties);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch properties');
-      } finally {
-        setLoading(false);
-      }
-    };
+          return {
+            ...property,
+            tenancy: tenancyData || undefined,
+            pending_count,
+          };
+        })
+      );
 
+      setProperties(enrichedProperties);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch properties');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProperties();
   }, []);
 
-  return { properties, loading, error };
+  return { properties, loading, error, refetch: fetchProperties };
 }
 
 export function usePropertyDetail(propertyId: number) {
