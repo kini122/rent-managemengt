@@ -83,14 +83,29 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
                     {payment.remarks || '-'}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {payment.payment_status !== 'paid' && (
+                    {isEditable && payment.payment_status !== 'paid' && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onMarkPaid?.(payment.rent_id)}
+                        onClick={async () => {
+                          setLoading(payment.rent_id);
+                          try {
+                            await onMarkPaid?.(payment.rent_id);
+                          } finally {
+                            setLoading(null);
+                          }
+                        }}
+                        disabled={loading === payment.rent_id}
                         className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                       >
-                        Mark Paid
+                        {loading === payment.rent_id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Marking...
+                          </>
+                        ) : (
+                          'Mark Paid'
+                        )}
                       </Button>
                     )}
                   </td>
