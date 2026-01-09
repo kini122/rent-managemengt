@@ -13,7 +13,21 @@ export default function PropertyDetail() {
   const navigate = useNavigate();
   const propId = propertyId ? parseInt(propertyId) : 0;
 
-  const { property, tenancy, rentPayments, loading, error } = usePropertyDetail(propId);
+  const { property, tenancy, rentPayments, loading, error, refetch } = usePropertyDetail(propId);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+
+  const handleMarkRentAsPaid = async (rentId: number) => {
+    try {
+      setIsMarkingPaid(true);
+      await markRentAsPaid(rentId);
+      toast.success('Rent marked as paid');
+      await refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to mark rent as paid');
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
 
   if (loading) {
     return (
