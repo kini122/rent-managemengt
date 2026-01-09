@@ -1,9 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { usePropertyDetail } from '@/hooks/useSupabase';
 import { TenantSummary } from '@/components/TenantSummary';
 import { RentTable } from '@/components/RentTable';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { markRentAsPaid } from '@/services/supabaseAdmin';
+import { toast } from 'sonner';
 
 export default function PropertyDetail() {
   const { propertyId } = useParams<{ propertyId: string }>();
