@@ -94,9 +94,8 @@ export default function PropertyDetail() {
             <h2 className="text-xl font-bold text-slate-900 mb-4">Rent Payment History</h2>
             <RentTable
               payments={rentPayments}
-              onMarkPaid={(rentId) => {
-                // TODO: Update rent payment status
-              }}
+              onMarkPaid={handleMarkRentAsPaid}
+              isEditable={true}
             />
           </div>
         </div>
