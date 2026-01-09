@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
 import { isConfigured } from '@/lib/supabaseClient';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Settings } from 'lucide-react';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
@@ -11,8 +13,18 @@ export default function Home() {
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-slate-900">Rent Management System</h1>
-          <p className="text-slate-600 mt-1">Manage your properties and track rent payments</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Rent Management System</h1>
+              <p className="text-slate-600 mt-1">Manage your properties and track rent payments</p>
+            </div>
+            <Link to="/admin">
+              <Button className="gap-2">
+                <Settings className="w-4 h-4" />
+                Admin Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
