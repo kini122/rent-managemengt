@@ -1,5 +1,6 @@
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
+import { isConfigured } from '@/lib/supabaseClient';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
@@ -17,6 +18,14 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!isConfigured && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-amber-700 font-medium">
+              ⚠️ Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700 font-medium">Error: {error}</p>
