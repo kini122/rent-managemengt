@@ -19,6 +19,7 @@ export function TenantSummary({
   tenancy,
   onEdit,
   onCreateTenancy,
+  onTenancyEnded,
 }: TenantSummaryProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
