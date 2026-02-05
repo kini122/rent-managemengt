@@ -86,9 +86,7 @@ export default function PropertyDetail() {
           <TenantSummary
             property={property}
             tenancy={tenancy}
-            onCreateTenancy={() => {
-              // TODO: Open modal to create new tenancy
-            }}
+            onCreateTenancy={() => setShowTenancyModal(true)}
           />
 
           {/* Bottom Half: Rent Payments Table */}
