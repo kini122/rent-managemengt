@@ -4,7 +4,7 @@ import type { Property, Tenancy, Tenant } from '@/types/index';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { updateTenant, updateTenancy } from '@/services/supabaseAdmin';
+import { updateTenant, updateTenancy, endTenancy } from '@/services/supabaseAdmin';
 
 export interface TenantSummaryProps {
   property: Property;
