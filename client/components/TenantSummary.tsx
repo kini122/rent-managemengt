@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { Property, Tenancy, Tenant } from '@/types/index';
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { updateTenant, updateTenancy } from '@/services/supabaseAdmin';
 
 export interface TenantSummaryProps {
   property: Property;
