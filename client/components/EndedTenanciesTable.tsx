@@ -9,11 +9,6 @@ interface EndedTenancyRecord extends Tenancy {
   tenant: Tenant;
 }
 
-interface ExpandedRow {
-  tenancyId: number;
-  rentPayments: RentPayment[];
-}
-
 export function EndedTenanciesTable() {
   const [tenancies, setTenancies] = useState<EndedTenancyRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,82 +65,108 @@ export function EndedTenanciesTable() {
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="w-10 px-6 py-3"></th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="w-12 px-4 py-3 text-center"></th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[150px]">
                 Property
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[140px]">
                 Tenant
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[100px]">
                 Start Date
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[100px]">
                 End Date
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900 min-w-[100px]">
                 Monthly Rent
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900 min-w-[80px]">
                 Status
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {tenancies.map((tenancy) => (
-              <tbody key={tenancy.tenancy_id}>
-                <tr
-                  className="hover:bg-slate-50 cursor-pointer"
-                  onClick={() => toggleRowExpand(tenancy.tenancy_id)}
-                >
-                  <td className="px-6 py-4">
-                    <button className="text-slate-400 hover:text-slate-600">
-                      {expandedRows.has(tenancy.tenancy_id) ? (
-                        <ChevronUp className="w-5 h-5" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                    {tenancy.property?.address || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    <div>{tenancy.tenant?.name || '-'}</div>
-                    <div className="text-xs text-slate-500">{tenancy.tenant?.phone || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {new Date(tenancy.start_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                    ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
-                      {tenancy.status}
-                    </span>
-                  </td>
-                </tr>
-
-                {expandedRows.has(tenancy.tenancy_id) && (
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <td colSpan={7} className="px-6 py-4">
-                      <ExpandedTenancyDetails tenancyId={tenancy.tenancy_id} />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+              <EndedTenancyRow
+                key={tenancy.tenancy_id}
+                tenancy={tenancy}
+                isExpanded={expandedRows.has(tenancy.tenancy_id)}
+                onToggleExpand={() => toggleRowExpand(tenancy.tenancy_id)}
+              />
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+function EndedTenancyRow({
+  tenancy,
+  isExpanded,
+  onToggleExpand,
+}: {
+  tenancy: EndedTenancyRecord;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  return (
+    <>
+      <tr className="hover:bg-slate-50 cursor-pointer" onClick={onToggleExpand}>
+        <td className="w-12 px-4 py-4 text-center">
+          <button className="inline-flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5" />
+            ) : (
+              <ChevronDown className="w-5 h-5" />
+            )}
+          </button>
+        </td>
+        <td className="px-4 py-4 text-sm font-medium text-slate-900 truncate">
+          {tenancy.property?.address || '-'}
+        </td>
+        <td className="px-4 py-4 text-sm text-slate-600">
+          <div className="font-medium text-slate-900">{tenancy.tenant?.name || '-'}</div>
+          <div className="text-xs text-slate-500">{tenancy.tenant?.phone || '-'}</div>
+        </td>
+        <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
+          {new Date(tenancy.start_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </td>
+        <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
+          {tenancy.end_date
+            ? new Date(tenancy.end_date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
+            : '-'}
+        </td>
+        <td className="px-4 py-4 text-sm font-medium text-slate-900 text-right whitespace-nowrap">
+          ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
+        </td>
+        <td className="px-4 py-4 text-center">
+          <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium whitespace-nowrap">
+            {tenancy.status}
+          </span>
+        </td>
+      </tr>
+
+      {isExpanded && (
+        <tr className="bg-slate-50 border-b border-slate-200">
+          <td colSpan={7} className="px-4 py-4">
+            <ExpandedTenancyDetails tenancyId={tenancy.tenancy_id} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -177,7 +198,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-4">
+      <div className="flex items-center justify-center py-8">
         <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
       </div>
     );
@@ -189,33 +210,43 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
 
   return (
     <div className="space-y-4">
-      <h4 className="font-semibold text-slate-900">Rent Payment History</h4>
+      <h4 className="font-semibold text-slate-900 text-sm">Rent Payment History</h4>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-collapse">
           <thead className="bg-white border-b border-slate-300">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-slate-700">Month</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-700">Amount</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-700">Status</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-700">Paid Date</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-700">Remarks</th>
+              <th className="px-4 py-2 text-left font-medium text-slate-700 min-w-[120px]">
+                Month
+              </th>
+              <th className="px-4 py-2 text-right font-medium text-slate-700 min-w-[90px]">
+                Amount
+              </th>
+              <th className="px-4 py-2 text-center font-medium text-slate-700 min-w-[80px]">
+                Status
+              </th>
+              <th className="px-4 py-2 text-center font-medium text-slate-700 min-w-[100px]">
+                Paid Date
+              </th>
+              <th className="px-4 py-2 text-left font-medium text-slate-700 min-w-[100px]">
+                Remarks
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {rentPayments.map((payment) => (
               <tr key={payment.rent_id} className="hover:bg-white">
-                <td className="px-4 py-2 text-slate-900">
-                  {new Date(payment.rent_month).toLocaleDateString('en-IN', {
-                    month: 'long',
+                <td className="px-4 py-2 text-slate-900 font-medium">
+                  {new Date(payment.rent_month).toLocaleDateString('en-US', {
+                    month: 'short',
                     year: 'numeric',
                   })}
                 </td>
-                <td className="px-4 py-2 font-medium text-slate-900">
+                <td className="px-4 py-2 font-medium text-slate-900 text-right">
                   ₹{payment.rent_amount.toLocaleString('en-IN')}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 text-center">
                   <span
-                    className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                    className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
                       payment.payment_status === 'paid'
                         ? 'bg-green-100 text-green-700'
                         : payment.payment_status === 'partial'
@@ -226,10 +257,18 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                     {payment.payment_status}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-slate-600">
-                  {payment.paid_date ? new Date(payment.paid_date).toLocaleDateString() : '-'}
+                <td className="px-4 py-2 text-slate-600 text-center whitespace-nowrap">
+                  {payment.paid_date
+                    ? new Date(payment.paid_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : '-'}
                 </td>
-                <td className="px-4 py-2 text-slate-600">{payment.remarks || '-'}</td>
+                <td className="px-4 py-2 text-slate-600 truncate">
+                  {payment.remarks || '-'}
+                </td>
               </tr>
             ))}
           </tbody>
