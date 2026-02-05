@@ -11,6 +11,7 @@ export interface TenantSummaryProps {
   tenancy?: (Tenancy & { tenant: Tenant }) | null;
   onEdit?: () => void;
   onCreateTenancy?: () => void;
+  onTenancyEnded?: () => void;
 }
 
 export function TenantSummary({
