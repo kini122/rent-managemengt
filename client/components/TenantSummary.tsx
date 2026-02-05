@@ -81,6 +81,23 @@ export function TenantSummary({
     setIsEditing(false);
   };
 
+  const handleEndTenancy = async () => {
+    if (!confirm('Are you sure you want to end this tenancy? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await endTenancy(tenancy!.tenancy_id);
+      toast.success('Tenancy ended successfully');
+      onTenancyEnded?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to end tenancy');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (!tenancy) {
     return (
       <div className="bg-white rounded-lg border border-slate-200 p-6">
