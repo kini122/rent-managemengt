@@ -99,6 +99,14 @@ export default function PropertyDetail() {
             />
           </div>
         </div>
+
+        {/* Create Tenancy Modal */}
+        <CreateTenancyModal
+          propertyId={propId}
+          isOpen={showTenancyModal}
+          onClose={() => setShowTenancyModal(false)}
+          onSuccess={refetch}
+        />
       </div>
     </div>
   );
