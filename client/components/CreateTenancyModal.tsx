@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { createTenant, createTenancy } from '@/services/supabaseAdmin';
-import { supabase } from '@/lib/supabaseClient';
-import type { Tenant } from '@/types/index';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, X } from "lucide-react";
+import { toast } from "sonner";
+import { createTenant, createTenancy } from "@/services/supabaseAdmin";
+import { supabase } from "@/lib/supabaseClient";
+import type { Tenant } from "@/types/index";
 
 interface CreateTenancyModalProps {
   propertyId: number;
@@ -24,18 +29,23 @@ export function CreateTenancyModal({
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingTenants, setFetchingTenants] = useState(false);
-  const [mode, setMode] = useState<'select' | 'create'>('select');
+  const [mode, setMode] = useState<"select" | "create">("select");
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
 
   // New tenant form
-  const [newTenant, setNewTenant] = useState({ name: '', phone: '', id_proof: '', notes: '' });
+  const [newTenant, setNewTenant] = useState({
+    name: "",
+    phone: "",
+    id_proof: "",
+    notes: "",
+  });
 
   // Tenancy form
   const [tenancyData, setTenancyData] = useState({
-    start_date: new Date().toISOString().split('T')[0],
-    monthly_rent: '',
-    advance_amount: '',
-    status: 'active' as const,
+    start_date: new Date().toISOString().split("T")[0],
+    monthly_rent: "",
+    advance_amount: "",
+    status: "active" as const,
   });
 
   // Fetch existing tenants
@@ -49,14 +59,16 @@ export function CreateTenancyModal({
     try {
       setFetchingTenants(true);
       const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .order('name');
+        .from("tenants")
+        .select("*")
+        .order("name");
 
       if (error) throw error;
       setTenants(data || []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to fetch tenants');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to fetch tenants",
+      );
     } finally {
       setFetchingTenants(false);
     }
@@ -64,7 +76,7 @@ export function CreateTenancyModal({
 
   const handleCreateTenant = async () => {
     if (!newTenant.name.trim()) {
-      toast.error('Tenant name is required');
+      toast.error("Tenant name is required");
       return;
     }
 
@@ -78,27 +90,29 @@ export function CreateTenancyModal({
       });
 
       setSelectedTenantId(tenant.tenant_id);
-      setNewTenant({ name: '', phone: '', id_proof: '', notes: '' });
-      setMode('select');
+      setNewTenant({ name: "", phone: "", id_proof: "", notes: "" });
+      setMode("select");
       await fetchTenants();
-      toast.success('Tenant created successfully');
+      toast.success("Tenant created successfully");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create tenant');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create tenant",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateTenancy = async () => {
-    const tenantId = mode === 'create' ? selectedTenantId : selectedTenantId;
+    const tenantId = mode === "create" ? selectedTenantId : selectedTenantId;
 
     if (!tenantId) {
-      toast.error('Please select or create a tenant');
+      toast.error("Please select or create a tenant");
       return;
     }
 
     if (!tenancyData.monthly_rent) {
-      toast.error('Monthly rent is required');
+      toast.error("Monthly rent is required");
       return;
     }
 
@@ -110,30 +124,32 @@ export function CreateTenancyModal({
         start_date: tenancyData.start_date,
         end_date: null,
         monthly_rent: parseFloat(tenancyData.monthly_rent),
-        advance_amount: parseFloat(tenancyData.advance_amount || '0'),
+        advance_amount: parseFloat(tenancyData.advance_amount || "0"),
         status: tenancyData.status,
       });
 
-      toast.success('Tenancy created successfully');
+      toast.success("Tenancy created successfully");
       onSuccess();
       onClose();
       resetForm();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create tenancy');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create tenancy",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const resetForm = () => {
-    setMode('select');
+    setMode("select");
     setSelectedTenantId(null);
-    setNewTenant({ name: '', phone: '', id_proof: '', notes: '' });
+    setNewTenant({ name: "", phone: "", id_proof: "", notes: "" });
     setTenancyData({
-      start_date: new Date().toISOString().split('T')[0],
-      monthly_rent: '',
-      advance_amount: '',
-      status: 'active',
+      start_date: new Date().toISOString().split("T")[0],
+      monthly_rent: "",
+      advance_amount: "",
+      status: "active",
     });
   };
 
@@ -153,28 +169,28 @@ export function CreateTenancyModal({
 
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setMode('select')}
+                onClick={() => setMode("select")}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  mode === 'select'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  mode === "select"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 Select Existing
               </button>
               <button
-                onClick={() => setMode('create')}
+                onClick={() => setMode("create")}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  mode === 'create'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  mode === "create"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 Create New
               </button>
             </div>
 
-            {mode === 'select' ? (
+            {mode === "select" ? (
               // Select existing tenant
               <div>
                 {fetchingTenants ? (
@@ -182,17 +198,21 @@ export function CreateTenancyModal({
                     <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
                   </div>
                 ) : tenants.length === 0 ? (
-                  <p className="text-slate-600 text-sm">No tenants found. Create a new one.</p>
+                  <p className="text-slate-600 text-sm">
+                    No tenants found. Create a new one.
+                  </p>
                 ) : (
                   <select
-                    value={selectedTenantId || ''}
-                    onChange={(e) => setSelectedTenantId(parseInt(e.target.value))}
+                    value={selectedTenantId || ""}
+                    onChange={(e) =>
+                      setSelectedTenantId(parseInt(e.target.value))
+                    }
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a tenant --</option>
                     {tenants.map((tenant) => (
                       <option key={tenant.tenant_id} value={tenant.tenant_id}>
-                        {tenant.name} {tenant.phone ? `(${tenant.phone})` : ''}
+                        {tenant.name} {tenant.phone ? `(${tenant.phone})` : ""}
                       </option>
                     ))}
                   </select>
@@ -205,27 +225,35 @@ export function CreateTenancyModal({
                   type="text"
                   placeholder="Tenant Name *"
                   value={newTenant.name}
-                  onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewTenant({ ...newTenant, name: e.target.value })
+                  }
                   className="w-full"
                 />
                 <Input
                   type="tel"
                   placeholder="Phone"
                   value={newTenant.phone}
-                  onChange={(e) => setNewTenant({ ...newTenant, phone: e.target.value })}
+                  onChange={(e) =>
+                    setNewTenant({ ...newTenant, phone: e.target.value })
+                  }
                   className="w-full"
                 />
                 <Input
                   type="text"
                   placeholder="ID Proof"
                   value={newTenant.id_proof}
-                  onChange={(e) => setNewTenant({ ...newTenant, id_proof: e.target.value })}
+                  onChange={(e) =>
+                    setNewTenant({ ...newTenant, id_proof: e.target.value })
+                  }
                   className="w-full"
                 />
                 <textarea
                   placeholder="Notes"
                   value={newTenant.notes}
-                  onChange={(e) => setNewTenant({ ...newTenant, notes: e.target.value })}
+                  onChange={(e) =>
+                    setNewTenant({ ...newTenant, notes: e.target.value })
+                  }
                   rows={2}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -242,7 +270,9 @@ export function CreateTenancyModal({
               <Input
                 type="date"
                 value={tenancyData.start_date}
-                onChange={(e) => setTenancyData({ ...tenancyData, start_date: e.target.value })}
+                onChange={(e) =>
+                  setTenancyData({ ...tenancyData, start_date: e.target.value })
+                }
                 className="w-full"
               />
             </div>
@@ -255,7 +285,12 @@ export function CreateTenancyModal({
                 type="number"
                 placeholder="0"
                 value={tenancyData.monthly_rent}
-                onChange={(e) => setTenancyData({ ...tenancyData, monthly_rent: e.target.value })}
+                onChange={(e) =>
+                  setTenancyData({
+                    ...tenancyData,
+                    monthly_rent: e.target.value,
+                  })
+                }
                 className="w-full"
               />
             </div>
@@ -269,7 +304,10 @@ export function CreateTenancyModal({
                 placeholder="0"
                 value={tenancyData.advance_amount}
                 onChange={(e) =>
-                  setTenancyData({ ...tenancyData, advance_amount: e.target.value })
+                  setTenancyData({
+                    ...tenancyData,
+                    advance_amount: e.target.value,
+                  })
                 }
                 className="w-full"
               />
@@ -284,7 +322,10 @@ export function CreateTenancyModal({
                 onChange={(e) =>
                   setTenancyData({
                     ...tenancyData,
-                    status: e.target.value as 'active' | 'completed' | 'terminated',
+                    status: e.target.value as
+                      | "active"
+                      | "completed"
+                      | "terminated",
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -304,7 +345,7 @@ export function CreateTenancyModal({
           </Button>
           <Button
             onClick={() => {
-              if (mode === 'create') {
+              if (mode === "create") {
                 handleCreateTenant();
               } else {
                 handleCreateTenancy();
@@ -314,7 +355,7 @@ export function CreateTenancyModal({
             className="gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {mode === 'create' ? 'Create Tenant & Continue' : 'Create Tenancy'}
+            {mode === "create" ? "Create Tenant & Continue" : "Create Tenancy"}
           </Button>
         </div>
       </DialogContent>
