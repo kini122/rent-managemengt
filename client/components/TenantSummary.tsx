@@ -30,6 +30,55 @@ export function TenantSummary({
     advanceAmount: tenancy?.advance_amount.toString() || '',
   });
 
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+
+      // Update tenant
+      if (editData.tenantName !== tenancy?.tenant.name || editData.phone !== tenancy?.tenant.phone) {
+        await updateTenant(tenancy!.tenant.tenant_id, {
+          name: editData.tenantName,
+          phone: editData.phone,
+        });
+      }
+
+      // Update tenancy
+      if (
+        editData.monthlyRent !== tenancy?.monthly_rent.toString() ||
+        editData.advanceAmount !== tenancy?.advance_amount.toString() ||
+        editData.status !== tenancy?.status ||
+        editData.startDate !== tenancy?.start_date
+      ) {
+        await updateTenancy(tenancy!.tenancy_id, {
+          monthly_rent: parseFloat(editData.monthlyRent),
+          advance_amount: parseFloat(editData.advanceAmount),
+          status: editData.status as 'active' | 'completed' | 'terminated',
+          start_date: editData.startDate,
+        });
+      }
+
+      toast.success('Tenancy details updated successfully');
+      setIsEditing(false);
+      onEdit?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditData({
+      tenantName: tenancy?.tenant.name || '',
+      phone: tenancy?.tenant.phone || '',
+      startDate: tenancy?.start_date || '',
+      status: tenancy?.status || 'active',
+      monthlyRent: tenancy?.monthly_rent.toString() || '',
+      advanceAmount: tenancy?.advance_amount.toString() || '',
+    });
+    setIsEditing(false);
+  };
+
   if (!tenancy) {
     return (
       <div className="bg-white rounded-lg border border-slate-200 p-6">
