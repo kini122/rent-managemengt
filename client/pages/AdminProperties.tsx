@@ -211,9 +211,28 @@ export default function AdminProperties() {
                         {property.details ? property.details.substring(0, 50) + '...' : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateProperty(property.property_id, {
+                                is_active: !property.is_active,
+                              });
+                              toast.success(
+                                `Property marked as ${!property.is_active ? 'Active' : 'Inactive'}`
+                              );
+                              await fetchProperties();
+                            } catch (err) {
+                              toast.error('Failed to update property status');
+                            }
+                          }}
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                            property.is_active
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
                           {property.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-6 py-4 text-sm space-x-2">
                         <button
