@@ -139,12 +139,23 @@ export function TenantSummary({
               </Button>
             </>
           ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              Edit
-            </button>
+            <>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                Edit
+              </button>
+              {tenancy.status === 'active' && (
+                <button
+                  onClick={handleEndTenancy}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  End Tenancy
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
