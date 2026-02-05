@@ -278,6 +278,12 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        {/* Ended Tenancies Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Ended Tenancies</h2>
+          <EndedTenanciesTable />
+        </div>
       </div>
     </div>
   );
