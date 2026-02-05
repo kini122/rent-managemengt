@@ -54,18 +54,55 @@ ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rent_payments ENABLE ROW LEVEL SECURITY;
 
--- Create policies for authenticated users (read-only)
-CREATE POLICY "Allow read access to all authenticated users" ON properties
-  FOR SELECT TO authenticated USING (true);
+-- Create policies allowing public access (MVP - no authentication required)
+-- Properties table policies
+CREATE POLICY "Allow public read on properties" ON properties
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access to all authenticated users" ON tenants
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow public insert on properties" ON properties
+  FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Allow read access to all authenticated users" ON tenancies
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow public update on properties" ON properties
+  FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow read access to all authenticated users" ON rent_payments
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow public delete on properties" ON properties
+  FOR DELETE USING (true);
 
--- TODO: Create admin-specific policies for INSERT/UPDATE/DELETE
--- This requires setting up admin role and auth policies
+-- Tenants table policies
+CREATE POLICY "Allow public read on tenants" ON tenants
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert on tenants" ON tenants
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update on tenants" ON tenants
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete on tenants" ON tenants
+  FOR DELETE USING (true);
+
+-- Tenancies table policies
+CREATE POLICY "Allow public read on tenancies" ON tenancies
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert on tenancies" ON tenancies
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update on tenancies" ON tenancies
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete on tenancies" ON tenancies
+  FOR DELETE USING (true);
+
+-- Rent_payments table policies
+CREATE POLICY "Allow public read on rent_payments" ON rent_payments
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert on rent_payments" ON rent_payments
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update on rent_payments" ON rent_payments
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete on rent_payments" ON rent_payments
+  FOR DELETE USING (true);
