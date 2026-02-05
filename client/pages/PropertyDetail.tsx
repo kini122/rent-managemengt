@@ -87,6 +87,10 @@ export default function PropertyDetail() {
             property={property}
             tenancy={tenancy}
             onCreateTenancy={() => setShowTenancyModal(true)}
+            onTenancyEnded={() => {
+              refetch();
+              toast.success('Tenancy has been ended');
+            }}
           />
 
           {/* Bottom Half: Rent Payments Table */}
