@@ -235,6 +235,11 @@ export default function AdminProperties() {
                         </button>
                       </td>
                       <td className="px-6 py-4 text-sm space-x-2">
+                        <Link to={`/property/${property.property_id}`}>
+                          <button className="inline-flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                            Manage Tenants
+                          </button>
+                        </Link>
                         <button
                           onClick={() => handleEdit(property)}
                           className="inline-flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
