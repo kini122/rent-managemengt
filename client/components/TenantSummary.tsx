@@ -100,58 +100,139 @@ export function TenantSummary({
           <h2 className="text-2xl font-bold text-slate-900">{property.address}</h2>
           <p className="text-slate-600 mt-1">{property.details}</p>
         </div>
-        <button
-          onClick={() => {
-            setIsEditing(!isEditing);
-            onEdit?.();
-          }}
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          {isEditing ? 'Done' : 'Edit'}
-        </button>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="gap-2"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              Edit
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Tenant Info */}
         <div>
           <label className="text-sm font-medium text-slate-600">Tenant Name</label>
-          <p className="text-lg font-semibold text-slate-900 mt-1">{tenancy.tenant.name}</p>
+          {isEditing ? (
+            <Input
+              type="text"
+              value={editData.tenantName}
+              onChange={(e) => setEditData({ ...editData, tenantName: e.target.value })}
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-slate-900 mt-1">{tenancy.tenant.name}</p>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium text-slate-600">Phone</label>
-          <p className="text-lg font-semibold text-slate-900 mt-1">{tenancy.tenant.phone}</p>
+          {isEditing ? (
+            <Input
+              type="tel"
+              value={editData.phone}
+              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-slate-900 mt-1">{tenancy.tenant.phone}</p>
+          )}
         </div>
 
         {/* Tenancy Info */}
         <div>
           <label className="text-sm font-medium text-slate-600">Start Date</label>
-          <p className="text-lg font-semibold text-slate-900 mt-1">
-            {new Date(tenancy.start_date).toLocaleDateString()}
-          </p>
+          {isEditing ? (
+            <Input
+              type="date"
+              value={editData.startDate}
+              onChange={(e) => setEditData({ ...editData, startDate: e.target.value })}
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              {new Date(tenancy.start_date).toLocaleDateString()}
+            </p>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium text-slate-600">Status</label>
-          <div className="mt-1">
-            <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-              {tenancy.status}
-            </span>
-          </div>
+          {isEditing ? (
+            <select
+              value={editData.status}
+              onChange={(e) =>
+                setEditData({
+                  ...editData,
+                  status: e.target.value as 'active' | 'completed' | 'terminated',
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="terminated">Terminated</option>
+            </select>
+          ) : (
+            <div className="mt-1">
+              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+                {tenancy.status}
+              </span>
+            </div>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium text-slate-600">Monthly Rent</label>
-          <p className="text-lg font-semibold text-slate-900 mt-1">
-            ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
-          </p>
+          {isEditing ? (
+            <Input
+              type="number"
+              value={editData.monthlyRent}
+              onChange={(e) => setEditData({ ...editData, monthlyRent: e.target.value })}
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
+            </p>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium text-slate-600">Advance Amount</label>
-          <p className="text-lg font-semibold text-slate-900 mt-1">
-            ₹{tenancy.advance_amount.toLocaleString('en-IN')}
-          </p>
+          {isEditing ? (
+            <Input
+              type="number"
+              value={editData.advanceAmount}
+              onChange={(e) => setEditData({ ...editData, advanceAmount: e.target.value })}
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              ₹{tenancy.advance_amount.toLocaleString('en-IN')}
+            </p>
+          )}
         </div>
       </div>
     </div>
