@@ -20,6 +20,15 @@ export function TenantSummary({
   onCreateTenancy,
 }: TenantSummaryProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    tenantName: tenancy?.tenant.name || '',
+    phone: tenancy?.tenant.phone || '',
+    startDate: tenancy?.start_date || '',
+    status: tenancy?.status || 'active',
+    monthlyRent: tenancy?.monthly_rent.toString() || '',
+    advanceAmount: tenancy?.advance_amount.toString() || '',
+  });
 
   if (!tenancy) {
     return (
