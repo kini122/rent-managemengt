@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { Input } from '@/components/ui/input';
-import { Loader2, ChevronDown, ChevronUp, Edit2, Check, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { updateRentPayment } from '@/services/supabaseAdmin';
-import type { Tenancy, Tenant, Property, RentPayment } from '@/types/index';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { Input } from "@/components/ui/input";
+import { Loader2, ChevronDown, ChevronUp, Edit2, Check, X } from "lucide-react";
+import { toast } from "sonner";
+import { updateRentPayment } from "@/services/supabaseAdmin";
+import type { Tenancy, Tenant, Property, RentPayment } from "@/types/index";
 
 interface EndedTenancyRecord extends Tenancy {
   property: Property;
@@ -24,15 +24,17 @@ export function EndedTenanciesTable() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('tenancies')
-        .select('*, property:properties(*), tenant:tenants(*)')
-        .not('end_date', 'is', null)
-        .order('end_date', { ascending: false });
+        .from("tenancies")
+        .select("*, property:properties(*), tenant:tenants(*)")
+        .not("end_date", "is", null)
+        .order("end_date", { ascending: false });
 
       if (error) throw error;
       setTenancies(data || []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to fetch ended tenancies');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to fetch ended tenancies",
+      );
     } finally {
       setLoading(false);
     }
@@ -129,30 +131,34 @@ function EndedTenancyRow({
           </button>
         </td>
         <td className="px-4 py-4 text-sm font-medium text-slate-900 truncate">
-          {tenancy.property?.address || '-'}
+          {tenancy.property?.address || "-"}
         </td>
         <td className="px-4 py-4 text-sm text-slate-600">
-          <div className="font-medium text-slate-900">{tenancy.tenant?.name || '-'}</div>
-          <div className="text-xs text-slate-500">{tenancy.tenant?.phone || '-'}</div>
+          <div className="font-medium text-slate-900">
+            {tenancy.tenant?.name || "-"}
+          </div>
+          <div className="text-xs text-slate-500">
+            {tenancy.tenant?.phone || "-"}
+          </div>
         </td>
         <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
-          {new Date(tenancy.start_date).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
+          {new Date(tenancy.start_date).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
           })}
         </td>
         <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
           {tenancy.end_date
-            ? new Date(tenancy.end_date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
+            ? new Date(tenancy.end_date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
               })
-            : '-'}
+            : "-"}
         </td>
         <td className="px-4 py-4 text-sm font-medium text-slate-900 text-right whitespace-nowrap">
-          ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
+          ₹{tenancy.monthly_rent.toLocaleString("en-IN")}
         </td>
         <td className="px-4 py-4 text-center">
           <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium whitespace-nowrap">
@@ -177,7 +183,12 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
-    [key: number]: { paid_date: string; remarks: string; status?: 'paid' | 'pending' | 'partial'; paidAmount?: number };
+    [key: number]: {
+      paid_date: string;
+      remarks: string;
+      status?: "paid" | "pending" | "partial";
+      paidAmount?: number;
+    };
   }>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -189,15 +200,17 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('rent_payments')
-        .select('*')
-        .eq('tenancy_id', tenancyId)
-        .order('rent_month', { ascending: false });
+        .from("rent_payments")
+        .select("*")
+        .eq("tenancy_id", tenancyId)
+        .order("rent_month", { ascending: false });
 
       if (error) throw error;
       setRentPayments(data || []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to fetch rent payments');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to fetch rent payments",
+      );
     } finally {
       setLoading(false);
     }
@@ -207,16 +220,16 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
     setEditingId(payment.rent_id);
     // Parse paid amount from remarks if it exists (format: "Paid: ₹X")
     let paidAmount = 0;
-    if (payment.payment_status === 'partial' && payment.remarks) {
+    if (payment.payment_status === "partial" && payment.remarks) {
       const match = payment.remarks.match(/Paid:\s*₹?([\d,]+)/);
       if (match) {
-        paidAmount = parseInt(match[1].replace(/,/g, ''), 10);
+        paidAmount = parseInt(match[1].replace(/,/g, ""), 10);
       }
     }
     setEditData({
       [payment.rent_id]: {
-        paid_date: payment.paid_date || '',
-        remarks: payment.remarks || '',
+        paid_date: payment.paid_date || "",
+        remarks: payment.remarks || "",
         status: payment.payment_status,
         paidAmount: paidAmount || undefined,
       },
@@ -234,17 +247,17 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
       const data = editData[payment.rent_id];
 
       // If marking as partial, require paid amount
-      if (data.status === 'partial' && !data.paidAmount) {
-        toast.error('Please enter the paid amount for partial payment');
+      if (data.status === "partial" && !data.paidAmount) {
+        toast.error("Please enter the paid amount for partial payment");
         setSavingId(null);
         return;
       }
 
       // Format remarks to include paid amount for partial payments
       let finalRemarks = data.remarks;
-      if (data.status === 'partial' && data.paidAmount) {
+      if (data.status === "partial" && data.paidAmount) {
         const remaining = payment.rent_amount - data.paidAmount;
-        finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString('en-IN')} | Remaining: ₹${remaining.toLocaleString('en-IN')}`;
+        finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString("en-IN")} | Remaining: ₹${remaining.toLocaleString("en-IN")}`;
         if (data.remarks && data.remarks.trim()) {
           finalRemarks += ` | ${data.remarks}`;
         }
@@ -256,12 +269,14 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
         remarks: finalRemarks,
       });
 
-      toast.success('Payment details updated');
+      toast.success("Payment details updated");
       setEditingId(null);
       setEditData({});
       await fetchRentPayments();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update payment');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update payment",
+      );
     } finally {
       setSavingId(null);
     }
@@ -281,7 +296,9 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
 
   return (
     <div className="space-y-4">
-      <h4 className="font-semibold text-slate-900 text-sm">Rent Payment History</h4>
+      <h4 className="font-semibold text-slate-900 text-sm">
+        Rent Payment History
+      </h4>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead className="bg-white border-b border-slate-300">
@@ -310,34 +327,40 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
             {rentPayments.map((payment) => {
               const isEditing = editingId === payment.rent_id;
               const paidDateStr = payment.paid_date
-                ? new Date(payment.paid_date).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
+                ? new Date(payment.paid_date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
                   })
-                : '-';
+                : "-";
 
               return (
                 <tr key={payment.rent_id} className="hover:bg-white">
                   <td className="px-4 py-2 text-slate-900 font-medium">
-                    {new Date(payment.rent_month).toLocaleDateString('en-GB', {
-                      month: 'long',
-                      year: 'numeric',
+                    {new Date(payment.rent_month).toLocaleDateString("en-GB", {
+                      month: "long",
+                      year: "numeric",
                     })}
                   </td>
                   <td className="px-4 py-2 font-medium text-slate-900 text-right">
-                    ₹{payment.rent_amount.toLocaleString('en-IN')}
+                    ₹{payment.rent_amount.toLocaleString("en-IN")}
                   </td>
                   <td className="px-4 py-2 text-center">
                     {isEditing ? (
                       <select
-                        value={editData[payment.rent_id]?.status || payment.payment_status}
+                        value={
+                          editData[payment.rent_id]?.status ||
+                          payment.payment_status
+                        }
                         onChange={(e) =>
                           setEditData({
                             ...editData,
                             [payment.rent_id]: {
                               ...editData[payment.rent_id],
-                              status: e.target.value as 'paid' | 'pending' | 'partial',
+                              status: e.target.value as
+                                | "paid"
+                                | "pending"
+                                | "partial",
                             },
                           })
                         }
@@ -350,11 +373,11 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                     ) : (
                       <span
                         className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                          payment.payment_status === 'paid'
-                            ? 'bg-green-100 text-green-700'
-                            : payment.payment_status === 'partial'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
+                          payment.payment_status === "paid"
+                            ? "bg-green-100 text-green-700"
+                            : payment.payment_status === "partial"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
                         }`}
                       >
                         {payment.payment_status}
@@ -365,7 +388,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                     {isEditing ? (
                       <Input
                         type="date"
-                        value={editData[payment.rent_id]?.paid_date || ''}
+                        value={editData[payment.rent_id]?.paid_date || ""}
                         onChange={(e) =>
                           setEditData({
                             ...editData,
@@ -388,7 +411,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                       <Input
                         type="text"
                         placeholder="Remarks..."
-                        value={editData[payment.rent_id]?.remarks || ''}
+                        value={editData[payment.rent_id]?.remarks || ""}
                         onChange={(e) =>
                           setEditData({
                             ...editData,
@@ -402,7 +425,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                       />
                     ) : (
                       <span className="text-slate-600 text-xs truncate block">
-                        {payment.remarks || '-'}
+                        {payment.remarks || "-"}
                       </span>
                     )}
                   </td>

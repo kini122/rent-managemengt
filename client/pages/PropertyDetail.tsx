@@ -1,20 +1,21 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { usePropertyDetail } from '@/hooks/useSupabase';
-import { TenantSummary } from '@/components/TenantSummary';
-import { RentTable } from '@/components/RentTable';
-import { CreateTenancyModal } from '@/components/CreateTenancyModal';
-import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
-import { markRentAsPaid } from '@/services/supabaseAdmin';
-import { toast } from 'sonner';
+import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { usePropertyDetail } from "@/hooks/useSupabase";
+import { TenantSummary } from "@/components/TenantSummary";
+import { RentTable } from "@/components/RentTable";
+import { CreateTenancyModal } from "@/components/CreateTenancyModal";
+import { Button } from "@/components/ui/button";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { markRentAsPaid } from "@/services/supabaseAdmin";
+import { toast } from "sonner";
 
 export default function PropertyDetail() {
   const { propertyId } = useParams<{ propertyId: string }>();
   const navigate = useNavigate();
   const propId = propertyId ? parseInt(propertyId) : 0;
 
-  const { property, tenancy, rentPayments, loading, error, refetch } = usePropertyDetail(propId);
+  const { property, tenancy, rentPayments, loading, error, refetch } =
+    usePropertyDetail(propId);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [showTenancyModal, setShowTenancyModal] = useState(false);
 
@@ -22,10 +23,12 @@ export default function PropertyDetail() {
     try {
       setIsMarkingPaid(true);
       await markRentAsPaid(rentId);
-      toast.success('Rent marked as paid');
+      toast.success("Rent marked as paid");
       await refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to mark rent as paid');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to mark rent as paid",
+      );
     } finally {
       setIsMarkingPaid(false);
     }
@@ -48,14 +51,16 @@ export default function PropertyDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Properties
           </Button>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-700 font-medium">{error || 'Property not found'}</p>
+            <p className="text-red-700 font-medium">
+              {error || "Property not found"}
+            </p>
           </div>
         </div>
       </div>
@@ -69,13 +74,15 @@ export default function PropertyDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Properties
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900">Property Details</h1>
+          <h1 className="text-3xl font-bold text-slate-900">
+            Property Details
+          </h1>
         </div>
       </div>
 
@@ -89,13 +96,15 @@ export default function PropertyDetail() {
             onCreateTenancy={() => setShowTenancyModal(true)}
             onTenancyEnded={() => {
               refetch();
-              toast.success('Tenancy has been ended');
+              toast.success("Tenancy has been ended");
             }}
           />
 
           {/* Bottom Half: Rent Payments Table */}
           <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Rent Payment History</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-4">
+              Rent Payment History
+            </h2>
             <RentTable
               payments={rentPayments}
               onMarkPaid={handleMarkRentAsPaid}
