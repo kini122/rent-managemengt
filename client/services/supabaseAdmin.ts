@@ -134,29 +134,35 @@ async function autoGenerateRentPayments(
   const start = new Date(startDate);
   const now = new Date();
 
-  // Only generate rent payments for months that have fully passed
-  // Don't include the current month or future months
-  const lastDayOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
+  const startDay = start.getDate();
   const payments: Omit<RentPayment, 'rent_id' | 'created_at'>[] = [];
 
-  // Start from the beginning of the start month
-  const current = new Date(start.getFullYear(), start.getMonth(), 1);
+  // Generate rent for each month where the full month has passed
+  // Rent for month X is due on day startDay of month X+1
+  // It's "pending" only after the due date has passed
 
-  // Generate payments only up to the end of the previous month
-  while (current <= lastDayOfPreviousMonth) {
-    const rentMonth = current.toISOString().split('T')[0];
+  let currentMonth = new Date(start.getFullYear(), start.getMonth() + 1, startDay);
 
-    payments.push({
-      tenancy_id: tenancyId,
-      rent_month: rentMonth,
-      rent_amount: monthlyRent,
-      payment_status: 'pending',
-      paid_date: null,
-      remarks: '',
-    });
+  while (currentMonth <= now) {
+    // Only add as pending if this month's rent has become due (today is on or after the due date)
+    const dueDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), startDay);
 
-    current.setMonth(current.getMonth() + 1);
+    if (dueDate <= now) {
+      // The rent for the previous month (from startDay of prev month to startDay-1 of this month)
+      // is now due. Set rent_month to the first day of the month when rent is due
+      const rentMonth = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+
+      payments.push({
+        tenancy_id: tenancyId,
+        rent_month: rentMonth.toISOString().split('T')[0],
+        rent_amount: monthlyRent,
+        payment_status: 'pending',
+        paid_date: null,
+        remarks: '',
+      });
+    }
+
+    currentMonth.setMonth(currentMonth.getMonth() + 1);
   }
 
   if (payments.length > 0) {
