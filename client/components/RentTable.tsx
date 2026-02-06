@@ -142,15 +142,35 @@ export function RentTable({
                     ₹{payment.rent_amount.toLocaleString('en-IN')}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={cn(
-                        'inline-block px-3 py-1 rounded-full text-xs font-medium capitalize',
-                        statusColor.bg,
-                        statusColor.text
-                      )}
-                    >
-                      {payment.payment_status}
-                    </span>
+                    {isEditing ? (
+                      <select
+                        value={editData[payment.rent_id]?.status || payment.payment_status}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            [payment.rent_id]: {
+                              ...editData[payment.rent_id],
+                              status: e.target.value as 'paid' | 'pending' | 'partial',
+                            },
+                          })
+                        }
+                        className="w-full px-3 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={cn(
+                          'inline-block px-3 py-1 rounded-full text-xs font-medium capitalize',
+                          statusColor.bg,
+                          statusColor.text
+                        )}
+                      >
+                        {payment.payment_status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     {isEditing ? (
