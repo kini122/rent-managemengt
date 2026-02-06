@@ -11,6 +11,7 @@ export interface RentTableProps {
   payments: RentPayment[];
   onUpdateStatus?: (rentId: number, status: 'paid' | 'pending' | 'partial') => Promise<void>;
   onMarkPaid?: (rentId: number) => Promise<void>;
+  onRefresh?: () => Promise<void>;
   isEditable?: boolean;
 }
 
@@ -25,12 +26,64 @@ function getStatusColor(status: string) {
   }
 }
 
-export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTableProps) {
+export function RentTable({
+  payments,
+  onMarkPaid,
+  onRefresh,
+  isEditable = false,
+}: RentTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
     [key: number]: { paid_date: string; remarks: string };
   }>({});
+  const [savingId, setSavingId] = useState<number | null>(null);
+
+  const handleEditClick = (payment: RentPayment) => {
+    setEditingId(payment.rent_id);
+    setEditData({
+      [payment.rent_id]: {
+        paid_date: payment.paid_date || '',
+        remarks: payment.remarks || '',
+      },
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const handleSaveEdit = async (payment: RentPayment) => {
+    try {
+      setSavingId(payment.rent_id);
+      const data = editData[payment.rent_id];
+
+      await updateRentPayment(payment.rent_id, {
+        paid_date: data.paid_date || null,
+        remarks: data.remarks,
+      });
+
+      toast.success('Payment details updated');
+      setEditingId(null);
+      setEditData({});
+      await onRefresh?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update payment');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleMarkPaid = async (rentId: number) => {
+    setLoading(rentId);
+    try {
+      await onMarkPaid?.(rentId);
+      await onRefresh?.();
+    } finally {
+      setLoading(null);
+    }
+  };
 
   if (payments.length === 0) {
     return (
@@ -47,11 +100,21 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Month</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Rent Amount</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Paid Date</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Remarks</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Actions</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                Rent Amount
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                Paid Date
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                Remarks
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -70,6 +133,8 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
                   })
                 : '-';
 
+              const isEditing = editingId === payment.rent_id;
+
               return (
                 <tr key={payment.rent_id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-slate-900">{monthStr}</td>
@@ -87,37 +152,103 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
                       {payment.payment_status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {paidDateStr}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
-                    {payment.remarks || '-'}
+                  <td className="px-6 py-4 text-sm">
+                    {isEditing ? (
+                      <Input
+                        type="date"
+                        value={editData[payment.rent_id]?.paid_date || ''}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            [payment.rent_id]: {
+                              ...editData[payment.rent_id],
+                              paid_date: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full"
+                      />
+                    ) : (
+                      <span className="text-slate-600">{paidDateStr}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    {isEditable && payment.payment_status !== 'paid' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          setLoading(payment.rent_id);
-                          try {
-                            await onMarkPaid?.(payment.rent_id);
-                          } finally {
-                            setLoading(null);
-                          }
-                        }}
-                        disabled={loading === payment.rent_id}
-                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                      >
-                        {loading === payment.rent_id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Marking...
-                          </>
-                        ) : (
-                          'Mark Paid'
+                    {isEditing ? (
+                      <Input
+                        type="text"
+                        placeholder="Add remarks..."
+                        value={editData[payment.rent_id]?.remarks || ''}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            [payment.rent_id]: {
+                              ...editData[payment.rent_id],
+                              remarks: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full"
+                      />
+                    ) : (
+                      <span className="text-slate-600 max-w-xs truncate block">
+                        {payment.remarks || '-'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm space-x-2">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => handleSaveEdit(payment)}
+                          disabled={savingId === payment.rent_id}
+                          className="inline-flex items-center gap-1 px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {savingId === payment.rent_id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={savingId === payment.rent_id}
+                          className="inline-flex items-center gap-1 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {isEditable && (
+                          <button
+                            onClick={() => handleEditClick(payment)}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit
+                          </button>
                         )}
-                      </Button>
+                        {isEditable && payment.payment_status !== 'paid' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleMarkPaid(payment.rent_id)}
+                            disabled={loading === payment.rent_id}
+                            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                          >
+                            {loading === payment.rent_id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Marking...
+                              </>
+                            ) : (
+                              'Mark Paid'
+                            )}
+                          </Button>
+                        )}
+                      </>
                     )}
                   </td>
                 </tr>
