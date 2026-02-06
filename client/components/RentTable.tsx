@@ -28,6 +28,9 @@ function getStatusColor(status: string) {
 export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<{
+    [key: number]: { paid_date: string; remarks: string };
+  }>({});
 
   if (payments.length === 0) {
     return (
