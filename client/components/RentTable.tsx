@@ -35,7 +35,7 @@ export function RentTable({
   const [loading, setLoading] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
-    [key: number]: { paid_date: string; remarks: string; status?: 'paid' | 'pending' | 'partial' };
+    [key: number]: { paid_date: string; remarks: string; status?: 'paid' | 'pending' | 'partial'; paidAmount?: number };
   }>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
