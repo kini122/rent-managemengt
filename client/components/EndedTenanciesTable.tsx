@@ -134,18 +134,18 @@ function EndedTenancyRow({
           <div className="text-xs text-slate-500">{tenancy.tenant?.phone || '-'}</div>
         </td>
         <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
-          {new Date(tenancy.start_date).toLocaleDateString('en-US', {
+          {new Date(tenancy.start_date).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
-            month: 'short',
-            day: 'numeric',
           })}
         </td>
         <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
           {tenancy.end_date
-            ? new Date(tenancy.end_date).toLocaleDateString('en-US', {
+            ? new Date(tenancy.end_date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
                 year: 'numeric',
-                month: 'short',
-                day: 'numeric',
               })
             : '-'}
         </td>
