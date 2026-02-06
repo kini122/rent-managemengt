@@ -236,8 +236,8 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
             {rentPayments.map((payment) => (
               <tr key={payment.rent_id} className="hover:bg-white">
                 <td className="px-4 py-2 text-slate-900 font-medium">
-                  {new Date(payment.rent_month).toLocaleDateString('en-US', {
-                    month: 'short',
+                  {new Date(payment.rent_month).toLocaleDateString('en-GB', {
+                    month: 'long',
                     year: 'numeric',
                   })}
                 </td>
@@ -259,9 +259,9 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                 </td>
                 <td className="px-4 py-2 text-slate-600 text-center whitespace-nowrap">
                   {payment.paid_date
-                    ? new Date(payment.paid_date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
+                    ? new Date(payment.paid_date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
                         year: 'numeric',
                       })
                     : '-'}
