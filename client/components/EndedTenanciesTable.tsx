@@ -303,17 +303,37 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
                     ₹{payment.rent_amount.toLocaleString('en-IN')}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                        payment.payment_status === 'paid'
-                          ? 'bg-green-100 text-green-700'
-                          : payment.payment_status === 'partial'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {payment.payment_status}
-                    </span>
+                    {isEditing ? (
+                      <select
+                        value={editData[payment.rent_id]?.status || payment.payment_status}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            [payment.rent_id]: {
+                              ...editData[payment.rent_id],
+                              status: e.target.value as 'paid' | 'pending' | 'partial',
+                            },
+                          })
+                        }
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                          payment.payment_status === 'paid'
+                            ? 'bg-green-100 text-green-700'
+                            : payment.payment_status === 'partial'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {payment.payment_status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-center">
                     {isEditing ? (
