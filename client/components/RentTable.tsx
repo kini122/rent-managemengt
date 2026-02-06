@@ -1,8 +1,11 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { RentPayment } from '@/types/index';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Edit2, Check, X } from 'lucide-react';
+import { updateRentPayment } from '@/services/supabaseAdmin';
+import { toast } from 'sonner';
 
 export interface RentTableProps {
   payments: RentPayment[];
