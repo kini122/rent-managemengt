@@ -225,6 +225,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
       const data = editData[payment.rent_id];
 
       await updateRentPayment(payment.rent_id, {
+        payment_status: data.status || payment.payment_status,
         paid_date: data.paid_date || null,
         remarks: data.remarks,
       });
