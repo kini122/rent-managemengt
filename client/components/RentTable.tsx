@@ -45,6 +45,7 @@ export function RentTable({
       [payment.rent_id]: {
         paid_date: payment.paid_date || '',
         remarks: payment.remarks || '',
+        status: payment.payment_status,
       },
     });
   };
