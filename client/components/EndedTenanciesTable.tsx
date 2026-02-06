@@ -205,11 +205,20 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
 
   const handleEditClick = (payment: RentPayment) => {
     setEditingId(payment.rent_id);
+    // Parse paid amount from remarks if it exists (format: "Paid: ₹X")
+    let paidAmount = 0;
+    if (payment.payment_status === 'partial' && payment.remarks) {
+      const match = payment.remarks.match(/Paid:\s*₹?([\d,]+)/);
+      if (match) {
+        paidAmount = parseInt(match[1].replace(/,/g, ''), 10);
+      }
+    }
     setEditData({
       [payment.rent_id]: {
         paid_date: payment.paid_date || '',
         remarks: payment.remarks || '',
         status: payment.payment_status,
+        paidAmount: paidAmount || undefined,
       },
     });
   };
