@@ -133,23 +133,29 @@ async function autoGenerateRentPayments(
 ) {
   const start = new Date(startDate);
   const now = new Date();
-  
+
+  // Only generate rent payments for months that have fully passed
+  // Don't include the current month or future months
+  const lastDayOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
   const payments: Omit<RentPayment, 'rent_id' | 'created_at'>[] = [];
-  
-  const current = new Date(start);
-  while (current <= now) {
-    // Create rent record for first day of each month
-    const rentMonth = new Date(current.getFullYear(), current.getMonth(), 1);
-    
+
+  // Start from the beginning of the start month
+  const current = new Date(start.getFullYear(), start.getMonth(), 1);
+
+  // Generate payments only up to the end of the previous month
+  while (current <= lastDayOfPreviousMonth) {
+    const rentMonth = current.toISOString().split('T')[0];
+
     payments.push({
       tenancy_id: tenancyId,
-      rent_month: rentMonth.toISOString().split('T')[0],
+      rent_month: rentMonth,
       rent_amount: monthlyRent,
       payment_status: 'pending',
       paid_date: null,
       remarks: '',
     });
-    
+
     current.setMonth(current.getMonth() + 1);
   }
 
