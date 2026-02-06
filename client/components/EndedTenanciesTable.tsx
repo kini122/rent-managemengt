@@ -177,7 +177,7 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
-    [key: number]: { paid_date: string; remarks: string };
+    [key: number]: { paid_date: string; remarks: string; status?: 'paid' | 'pending' | 'partial' };
   }>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
