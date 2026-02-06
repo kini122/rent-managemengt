@@ -169,25 +169,65 @@ export function RentTable({
                   <td className="px-6 py-4 text-sm text-slate-900">
                     ₹{payment.rent_amount.toLocaleString('en-IN')}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 space-y-2">
                     {isEditing ? (
-                      <select
-                        value={editData[payment.rent_id]?.status || payment.payment_status}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            [payment.rent_id]: {
-                              ...editData[payment.rent_id],
-                              status: e.target.value as 'paid' | 'pending' | 'partial',
-                            },
-                          })
-                        }
-                        className="w-full px-3 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="partial">Partial</option>
-                      </select>
+                      <>
+                        <select
+                          value={editData[payment.rent_id]?.status || payment.payment_status}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              [payment.rent_id]: {
+                                ...editData[payment.rent_id],
+                                status: e.target.value as 'paid' | 'pending' | 'partial',
+                              },
+                            })
+                          }
+                          className="w-full px-3 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="paid">Paid</option>
+                          <option value="partial">Partial</option>
+                        </select>
+                        {editData[payment.rent_id]?.status === 'partial' && (
+                          <div className="text-xs space-y-1">
+                            <label className="block font-medium text-slate-700">
+                              Paid Amount (₹)
+                            </label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={editData[payment.rent_id]?.paidAmount || ''}
+                              onChange={(e) => {
+                                const amount = e.target.value ? parseInt(e.target.value) : 0;
+                                setEditData({
+                                  ...editData,
+                                  [payment.rent_id]: {
+                                    ...editData[payment.rent_id],
+                                    paidAmount: amount,
+                                  },
+                                });
+                              }}
+                              className="w-full text-sm"
+                              max={payment.rent_amount}
+                            />
+                            {editData[payment.rent_id]?.paidAmount ? (
+                              <div className="text-slate-600 bg-slate-50 p-2 rounded">
+                                <div>
+                                  Paid: ₹
+                                  {editData[payment.rent_id].paidAmount?.toLocaleString('en-IN')}
+                                </div>
+                                <div>
+                                  Remaining: ₹
+                                  {(
+                                    payment.rent_amount - (editData[payment.rent_id].paidAmount || 0)
+                                  ).toLocaleString('en-IN')}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <span
                         className={cn(
