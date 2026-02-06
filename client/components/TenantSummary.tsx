@@ -202,7 +202,11 @@ export function TenantSummary({
             />
           ) : (
             <p className="text-lg font-semibold text-slate-900 mt-1">
-              {new Date(tenancy.start_date).toLocaleDateString()}
+              {new Date(tenancy.start_date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
             </p>
           )}
         </div>
