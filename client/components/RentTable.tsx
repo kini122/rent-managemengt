@@ -52,10 +52,17 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
             {payments.map((payment) => {
               const statusColor = getStatusColor(payment.payment_status);
               const monthDate = new Date(payment.rent_month);
-              const monthStr = monthDate.toLocaleDateString('en-IN', {
+              const monthStr = monthDate.toLocaleDateString('en-GB', {
                 month: 'long',
                 year: 'numeric',
               });
+              const paidDateStr = payment.paid_date
+                ? new Date(payment.paid_date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })
+                : '-';
 
               return (
                 <tr key={payment.rent_id} className="hover:bg-slate-50 transition-colors">
@@ -75,9 +82,7 @@ export function RentTable({ payments, onMarkPaid, isEditable = false }: RentTabl
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">
-                    {payment.paid_date
-                      ? new Date(payment.paid_date).toLocaleDateString()
-                      : '-'}
+                    {paidDateStr}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
                     {payment.remarks || '-'}
