@@ -175,6 +175,11 @@ function EndedTenancyRow({
 function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<{
+    [key: number]: { paid_date: string; remarks: string };
+  }>({});
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchRentPayments();
@@ -195,6 +200,42 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
       toast.error(err instanceof Error ? err.message : 'Failed to fetch rent payments');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = (payment: RentPayment) => {
+    setEditingId(payment.rent_id);
+    setEditData({
+      [payment.rent_id]: {
+        paid_date: payment.paid_date || '',
+        remarks: payment.remarks || '',
+      },
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const handleSaveEdit = async (payment: RentPayment) => {
+    try {
+      setSavingId(payment.rent_id);
+      const data = editData[payment.rent_id];
+
+      await updateRentPayment(payment.rent_id, {
+        paid_date: data.paid_date || null,
+        remarks: data.remarks,
+      });
+
+      toast.success('Payment details updated');
+      setEditingId(null);
+      setEditData({});
+      await fetchRentPayments();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update payment');
+    } finally {
+      setSavingId(null);
     }
   };
 
