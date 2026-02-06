@@ -99,6 +99,7 @@ export default function PropertyDetail() {
             <RentTable
               payments={rentPayments}
               onMarkPaid={handleMarkRentAsPaid}
+              onRefresh={refetch}
               isEditable={true}
             />
           </div>
