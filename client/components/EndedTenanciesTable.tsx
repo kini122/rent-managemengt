@@ -233,10 +233,27 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
       setSavingId(payment.rent_id);
       const data = editData[payment.rent_id];
 
+      // If marking as partial, require paid amount
+      if (data.status === 'partial' && !data.paidAmount) {
+        toast.error('Please enter the paid amount for partial payment');
+        setSavingId(null);
+        return;
+      }
+
+      // Format remarks to include paid amount for partial payments
+      let finalRemarks = data.remarks;
+      if (data.status === 'partial' && data.paidAmount) {
+        const remaining = payment.rent_amount - data.paidAmount;
+        finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString('en-IN')} | Remaining: ₹${remaining.toLocaleString('en-IN')}`;
+        if (data.remarks && data.remarks.trim()) {
+          finalRemarks += ` | ${data.remarks}`;
+        }
+      }
+
       await updateRentPayment(payment.rent_id, {
         payment_status: data.status || payment.payment_status,
         paid_date: data.paid_date || null,
-        remarks: data.remarks,
+        remarks: finalRemarks,
       });
 
       toast.success('Payment details updated');
