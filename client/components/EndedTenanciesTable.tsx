@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, ChevronDown, ChevronUp, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { updateRentPayment } from '@/services/supabaseAdmin';
 import type { Tenancy, Tenant, Property, RentPayment } from '@/types/index';
 
 interface EndedTenancyRecord extends Tenancy {
