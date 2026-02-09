@@ -19,6 +19,8 @@ export interface TenantSummaryProps {
 export function TenantSummary({
   property,
   tenancy,
+  pendingRentCount = 0,
+  pendingRentAmount = 0,
   onEdit,
   onCreateTenancy,
   onTenancyEnded,
