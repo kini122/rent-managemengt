@@ -6,38 +6,14 @@ import { Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateTenant, updateTenancy, endTenancy } from '@/services/supabaseAdmin';
 
-function generateWhatsAppLink(
-  phone: string,
-  tenantName: string,
-  propertyAddress: string,
-  pendingRentCount: number,
-  pendingRentAmount: number
-): string {
-  let message = `Hello ${tenantName},\n\n`;
-  message += `This is to notify you regarding your rental property at:\n${propertyAddress}\n\n`;
-
-  if (pendingRentCount > 0) {
-    message += `📋 Pending Rent Details:\n`;
-    message += `• Number of pending months: ${pendingRentCount}\n`;
-    message += `• Total pending amount: ₹${pendingRentAmount.toLocaleString('en-IN')}\n\n`;
-    message += `Kindly arrange to pay the pending rent at your earliest convenience.\n`;
-  } else {
-    message += `Your rent payments are up to date. Thank you!\n`;
-  }
-
-  message += `\nFor any queries, please feel free to reach out.\n`;
-  message += `Thank you.`;
-
-  // Remove leading/trailing whitespace and encode for URL
-  const encodedMessage = encodeURIComponent(message);
-
+function generateWhatsAppLink(phone: string): string {
   // Format phone number: remove any non-digit characters and add country code if needed
   let formattedPhone = phone.replace(/\D/g, '');
   if (!formattedPhone.startsWith('91') && formattedPhone.length === 10) {
     formattedPhone = '91' + formattedPhone;
   }
 
-  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+  return `https://wa.me/${formattedPhone}`;
 }
 
 export interface TenantSummaryProps {
