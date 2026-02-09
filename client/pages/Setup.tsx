@@ -66,14 +66,39 @@ ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Quick Fix</h3>
+              <h3 className="font-semibold text-blue-900 mb-4">Database Setup Scripts</h3>
               <p className="text-blue-800 text-sm mb-4">
-                Disable RLS on the application tables. This is safe for single-user property management applications.
+                Run these SQL scripts in order to set up your database properly.
               </p>
 
+              {/* Tab Buttons */}
+              <div className="flex gap-2 mb-4 border-b border-blue-200">
+                <button
+                  onClick={() => setSelectedScript('rls')}
+                  className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+                    selectedScript === 'rls'
+                      ? 'border-blue-600 text-blue-900'
+                      : 'border-transparent text-blue-700 hover:text-blue-900'
+                  }`}
+                >
+                  Step 1: Disable RLS
+                </button>
+                <button
+                  onClick={() => setSelectedScript('table')}
+                  className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+                    selectedScript === 'table'
+                      ? 'border-blue-600 text-blue-900'
+                      : 'border-transparent text-blue-700 hover:text-blue-900'
+                  }`}
+                >
+                  Step 2: Create Table
+                </button>
+              </div>
+
+              {/* SQL Code Display */}
               <div className="bg-white rounded border border-blue-200 p-4 mb-4 font-mono text-sm overflow-x-auto">
                 <pre className="text-slate-700">
-{rls_disable_sql}
+{getSelectedSQL()}
                 </pre>
               </div>
 
