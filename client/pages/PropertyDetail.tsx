@@ -4,6 +4,7 @@ import { usePropertyDetail } from "@/hooks/useSupabase";
 import { TenantSummary } from "@/components/TenantSummary";
 import { RentTable } from "@/components/RentTable";
 import { CreateTenancyModal } from "@/components/CreateTenancyModal";
+import { PendingRentDetails } from "@/components/PendingRentDetails";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { markRentAsPaid } from "@/services/supabaseAdmin";
