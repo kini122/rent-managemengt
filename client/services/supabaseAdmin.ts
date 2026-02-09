@@ -248,41 +248,66 @@ export async function uploadTenancyDocument(
   file: File,
   documentType: string,
 ) {
+  // Validate file size (50MB limit)
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`File size exceeds 50MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  }
+
   // Create a unique file path
   const fileExt = file.name.split(".").pop();
   const fileName = `${tenancyId}_${Date.now()}.${fileExt}`;
   const filePath = `tenancy_${tenancyId}/${fileName}`;
 
-  // Upload to storage
-  const { error: uploadError } = await supabase.storage
-    .from("tenancy_documents")
-    .upload(filePath, file, { upsert: false });
+  try {
+    // Upload to storage with better error handling
+    const { error: uploadError } = await supabase.storage
+      .from("tenancy_documents")
+      .upload(filePath, file, { upsert: false });
 
-  if (uploadError) throw uploadError;
+    if (uploadError) {
+      // Provide user-friendly error messages
+      if (uploadError.message.includes("bucket") || uploadError.message.includes("not found")) {
+        throw new Error("Storage bucket not found. Initializing storage... Please try again.");
+      }
+      if (uploadError.message.includes("permission") || uploadError.message.includes("unauthorized")) {
+        throw new Error("Permission denied. Unable to upload document.");
+      }
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
 
-  // Add document record to database
-  const { data, error: dbError } = await supabase
-    .from("tenancy_documents")
-    .insert([
-      {
-        tenancy_id: tenancyId,
-        file_name: file.name,
-        file_path: filePath,
-        file_size: file.size,
-        file_type: file.type,
-        document_type: documentType,
-      },
-    ])
-    .select()
-    .single();
+    // Add document record to database
+    const { data, error: dbError } = await supabase
+      .from("tenancy_documents")
+      .insert([
+        {
+          tenancy_id: tenancyId,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          file_type: file.type,
+          document_type: documentType,
+        },
+      ])
+      .select()
+      .single();
 
-  if (dbError) {
-    // Clean up uploaded file if database insert fails
-    await supabase.storage.from("tenancy_documents").remove([filePath]);
-    throw dbError;
+    if (dbError) {
+      // Clean up uploaded file if database insert fails
+      try {
+        await supabase.storage.from("tenancy_documents").remove([filePath]);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup uploaded file:", cleanupError);
+      }
+      throw new Error(`Database error: ${dbError.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred during upload";
+    console.error("Document upload error:", errorMessage);
+    throw new Error(errorMessage);
   }
-
-  return data;
 }
 
 export async function downloadTenancyDocument(filePath: string) {
