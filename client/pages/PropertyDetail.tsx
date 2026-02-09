@@ -110,6 +110,9 @@ export default function PropertyDetail() {
             propertyAddress={property.address}
           />
 
+          {/* Tenancy Documents */}
+          {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} />}
+
           {/* Bottom Half: Rent Payments Table */}
           <div>
             <h2 className="text-xl font-bold text-slate-900 mb-4">
