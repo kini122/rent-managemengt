@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import type { Property, Tenant, Tenancy, RentPayment } from '@/types/index';
+import type { Property, Tenant, Tenancy, RentPayment, TenancyDocument } from '@/types/index';
 
 // Properties
 export async function createProperty(data: Omit<Property, 'property_id' | 'created_at'>) {
