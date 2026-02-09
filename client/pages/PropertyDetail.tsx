@@ -67,6 +67,16 @@ export default function PropertyDetail() {
     );
   }
 
+  // Calculate pending rent details
+  const pendingRentDetails = rentPayments
+    .filter(payment => payment.status === 'pending')
+    .reduce((acc, payment) => {
+      return {
+        count: acc.count + 1,
+        totalAmount: acc.totalAmount + payment.rent_amount,
+      };
+    }, { count: 0, totalAmount: 0 });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
@@ -93,6 +103,8 @@ export default function PropertyDetail() {
           <TenantSummary
             property={property}
             tenancy={tenancy}
+            pendingRentCount={pendingRentDetails.count}
+            pendingRentAmount={pendingRentDetails.totalAmount}
             onCreateTenancy={() => setShowTenancyModal(true)}
             onTenancyEnded={() => {
               refetch();
