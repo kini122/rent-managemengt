@@ -59,6 +59,7 @@ CREATE INDEX idx_tenancies_property_id ON tenancies(property_id);
 CREATE INDEX idx_tenancies_tenant_id ON tenancies(tenant_id);
 CREATE INDEX idx_rent_payments_tenancy_id ON rent_payments(tenancy_id);
 CREATE INDEX idx_rent_payments_status ON rent_payments(payment_status);
+CREATE INDEX idx_tenancy_documents_tenancy_id ON tenancy_documents(tenancy_id);
 
 -- Enable Row Level Security
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
