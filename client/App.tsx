@@ -25,6 +25,7 @@ const AppContent = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/debug" element={<Debug />} />
         <Route path="/rls-fix" element={<RLSFix />} />
         <Route path="/setup" element={<Setup />} />
         <Route path="/" element={<Home />} />
