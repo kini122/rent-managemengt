@@ -102,7 +102,12 @@ export default function PropertyDetail() {
           />
 
           {/* Pending & Partial Rent Details */}
-          <PendingRentDetails payments={rentPayments} />
+          <PendingRentDetails
+            payments={rentPayments}
+            tenantName={tenancy?.tenant.name}
+            tenantPhone={tenancy?.tenant.phone}
+            propertyAddress={property.address}
+          />
 
           {/* Bottom Half: Rent Payments Table */}
           <div>
