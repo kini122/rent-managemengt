@@ -42,6 +42,18 @@ CREATE TABLE rent_payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create tenancy_documents table
+CREATE TABLE tenancy_documents (
+  document_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  tenancy_id BIGINT NOT NULL REFERENCES tenancies(tenancy_id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT,
+  file_type TEXT,
+  document_type TEXT,
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_tenancies_property_id ON tenancies(property_id);
 CREATE INDEX idx_tenancies_tenant_id ON tenancies(tenant_id);
