@@ -182,11 +182,27 @@ ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
               </div>
             </div>
 
-            <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded border border-slate-200">
-              <p className="font-semibold mb-1">Why is this necessary?</p>
-              <p>
-                Supabase has RLS enabled as a security best practice, but the application needs full access to the data. Since this is a single-user property management system, disabling RLS is appropriate. If you need multi-user access with role-based restrictions, we can set up proper RLS policies instead.
-              </p>
+            <div className="space-y-3">
+              <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded border border-slate-200">
+                <p className="font-semibold mb-1">Step 1: Disable RLS</p>
+                <p>
+                  Your existing tables (properties, tenants, tenancies, rent_payments) have RLS enabled. This script disables it so the app can read and write data freely. Appropriate for single-user applications.
+                </p>
+              </div>
+
+              <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded border border-slate-200">
+                <p className="font-semibold mb-1">Step 2: Create Table</p>
+                <p>
+                  The <code className="bg-white px-1 rounded font-mono">tenancy_documents</code> table doesn't exist yet. This script creates it to store metadata about uploaded documents (file name, size, upload date, etc.). The actual files are stored in the storage bucket.
+                </p>
+              </div>
+
+              <div className="text-xs text-slate-600 bg-green-50 p-3 rounded border border-green-200">
+                <p className="font-semibold mb-1 text-green-900">Both Steps Required</p>
+                <p className="text-green-800">
+                  You must run BOTH queries in order for the application to work properly. First disable RLS, then create the documents table.
+                </p>
+              </div>
             </div>
           </div>
         </div>
