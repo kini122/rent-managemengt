@@ -204,13 +204,7 @@ export function TenantSummary({
               <p className="text-lg font-semibold text-slate-900">{tenancy.tenant.phone}</p>
               {tenancy.tenant.phone && (
                 <a
-                  href={generateWhatsAppLink(
-                    tenancy.tenant.phone,
-                    tenancy.tenant.name,
-                    property.address,
-                    pendingRentCount,
-                    pendingRentAmount
-                  )}
+                  href={generateWhatsAppLink(tenancy.tenant.phone)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors"
