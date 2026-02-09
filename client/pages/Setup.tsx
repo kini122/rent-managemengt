@@ -5,18 +5,41 @@ import { AlertCircle, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 
 export default function Setup() {
   const [copied, setCopied] = useState(false);
+  const [selectedScript, setSelectedScript] = useState<'rls' | 'table'>('rls');
 
-  const rls_disable_sql = `-- Disable RLS on all tables to allow public access
--- This is safe for single-user applications
+  const rls_disable_sql = `-- Disable RLS on existing tables
+-- This is safe for single-user property management applications
 
 ALTER TABLE properties DISABLE ROW LEVEL SECURITY;
 ALTER TABLE tenants DISABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancies DISABLE ROW LEVEL SECURITY;
-ALTER TABLE rent_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rent_payments DISABLE ROW LEVEL SECURITY;`;
+
+  const create_table_sql = `-- Create tenancy_documents table for storing document metadata
+-- This table tracks all uploaded documents for tenancies
+
+CREATE TABLE IF NOT EXISTS tenancy_documents (
+  document_id BIGSERIAL PRIMARY KEY,
+  tenancy_id BIGINT NOT NULL REFERENCES tenancies(tenancy_id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_tenancy_documents_tenancy_id
+  ON tenancy_documents(tenancy_id);
+
+-- Disable RLS on the new table if enabled by default
 ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
 
+  const getSelectedSQL = () => selectedScript === 'rls' ? rls_disable_sql : create_table_sql;
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(rls_disable_sql);
+    navigator.clipboard.writeText(getSelectedSQL());
     setCopied(true);
     toast.success('SQL copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
