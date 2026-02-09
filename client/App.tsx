@@ -12,6 +12,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProperties from "./pages/AdminProperties";
 import Setup from "./pages/Setup";
+import RLSFix from "./pages/RLSFix";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
