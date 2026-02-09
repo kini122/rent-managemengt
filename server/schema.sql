@@ -120,3 +120,16 @@ CREATE POLICY "Allow public update on rent_payments" ON rent_payments
 
 CREATE POLICY "Allow public delete on rent_payments" ON rent_payments
   FOR DELETE USING (true);
+
+-- Tenancy_documents table policies
+CREATE POLICY "Allow public read on tenancy_documents" ON tenancy_documents
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert on tenancy_documents" ON tenancy_documents
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update on tenancy_documents" ON tenancy_documents
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public delete on tenancy_documents" ON tenancy_documents
+  FOR DELETE USING (true);
