@@ -112,7 +112,7 @@ ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
             </div>
 
             <div>
-              <h3 className="font-semibold text-slate-900 mb-3">How to Apply</h3>
+              <h3 className="font-semibold text-slate-900 mb-3">How to Apply (2 Steps)</h3>
               <ol className="space-y-3 text-slate-700">
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-semibold">
@@ -147,13 +147,19 @@ ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
                   <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-semibold">
                     4
                   </span>
-                  <span>Click "New Query"</span>
+                  <span className="flex flex-col gap-2">
+                    <span className="font-semibold">First Query - Click "New Query" and run: Step 1 (Disable RLS)</span>
+                    <span className="text-sm text-slate-600">Click the "Step 1: Disable RLS" tab above, copy it, paste it, and click Run</span>
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-semibold">
                     5
                   </span>
-                  <span>Paste the SQL code above and click "Run"</span>
+                  <span className="flex flex-col gap-2">
+                    <span className="font-semibold">Second Query - Click "New Query" again and run: Step 2 (Create Table)</span>
+                    <span className="text-sm text-slate-600">Click the "Step 2: Create Table" tab above, copy it, paste it, and click Run</span>
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-semibold">
