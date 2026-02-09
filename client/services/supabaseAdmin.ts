@@ -1,10 +1,18 @@
-import { supabase } from '@/lib/supabaseClient';
-import type { Property, Tenant, Tenancy, RentPayment, TenancyDocument } from '@/types/index';
+import { supabase } from "@/lib/supabaseClient";
+import type {
+  Property,
+  Tenant,
+  Tenancy,
+  RentPayment,
+  TenancyDocument,
+} from "@/types/index";
 
 // Properties
-export async function createProperty(data: Omit<Property, 'property_id' | 'created_at'>) {
+export async function createProperty(
+  data: Omit<Property, "property_id" | "created_at">,
+) {
   const { data: result, error } = await supabase
-    .from('properties')
+    .from("properties")
     .insert([data])
     .select()
     .single();
@@ -15,9 +23,9 @@ export async function createProperty(data: Omit<Property, 'property_id' | 'creat
 
 export async function updateProperty(id: number, data: Partial<Property>) {
   const { data: result, error } = await supabase
-    .from('properties')
+    .from("properties")
     .update(data)
-    .eq('property_id', id)
+    .eq("property_id", id)
     .select()
     .single();
 
@@ -27,17 +35,19 @@ export async function updateProperty(id: number, data: Partial<Property>) {
 
 export async function deleteProperty(id: number) {
   const { error } = await supabase
-    .from('properties')
+    .from("properties")
     .delete()
-    .eq('property_id', id);
+    .eq("property_id", id);
 
   if (error) throw error;
 }
 
 // Tenants
-export async function createTenant(data: Omit<Tenant, 'tenant_id' | 'created_at'>) {
+export async function createTenant(
+  data: Omit<Tenant, "tenant_id" | "created_at">,
+) {
   const { data: result, error } = await supabase
-    .from('tenants')
+    .from("tenants")
     .insert([data])
     .select()
     .single();
@@ -48,9 +58,9 @@ export async function createTenant(data: Omit<Tenant, 'tenant_id' | 'created_at'
 
 export async function updateTenant(id: number, data: Partial<Tenant>) {
   const { data: result, error } = await supabase
-    .from('tenants')
+    .from("tenants")
     .update(data)
-    .eq('tenant_id', id)
+    .eq("tenant_id", id)
     .select()
     .single();
 
@@ -59,26 +69,32 @@ export async function updateTenant(id: number, data: Partial<Tenant>) {
 }
 
 // Tenancies
-export async function createTenancy(data: Omit<Tenancy, 'tenancy_id' | 'created_at'>) {
+export async function createTenancy(
+  data: Omit<Tenancy, "tenancy_id" | "created_at">,
+) {
   const { data: result, error } = await supabase
-    .from('tenancies')
+    .from("tenancies")
     .insert([data])
     .select()
     .single();
 
   if (error) throw error;
-  
+
   // Auto-generate rent payments for the tenancy
-  await autoGenerateRentPayments(result.tenancy_id, data.start_date, data.monthly_rent);
-  
+  await autoGenerateRentPayments(
+    result.tenancy_id,
+    data.start_date,
+    data.monthly_rent,
+  );
+
   return result;
 }
 
 export async function updateTenancy(id: number, data: Partial<Tenancy>) {
   const { data: result, error } = await supabase
-    .from('tenancies')
+    .from("tenancies")
     .update(data)
-    .eq('tenancy_id', id)
+    .eq("tenancy_id", id)
     .select()
     .single();
 
@@ -87,22 +103,22 @@ export async function updateTenancy(id: number, data: Partial<Tenancy>) {
 }
 
 export async function endTenancy(id: number) {
-  const today = new Date().toISOString().split('T')[0];
-  return updateTenancy(id, { 
+  const today = new Date().toISOString().split("T")[0];
+  return updateTenancy(id, {
     end_date: today,
-    status: 'completed'
+    status: "completed",
   });
 }
 
 // Rent Payments
 export async function updateRentPayment(
   id: number,
-  data: Partial<RentPayment>
+  data: Partial<RentPayment>,
 ) {
   const { data: result, error } = await supabase
-    .from('rent_payments')
+    .from("rent_payments")
     .update(data)
-    .eq('rent_id', id)
+    .eq("rent_id", id)
     .select()
     .single();
 
@@ -111,16 +127,16 @@ export async function updateRentPayment(
 }
 
 export async function markRentAsPaid(id: number) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   return updateRentPayment(id, {
-    payment_status: 'paid',
+    payment_status: "paid",
     paid_date: today,
   });
 }
 
 export async function markRentAsPartial(id: number, remarks?: string) {
   return updateRentPayment(id, {
-    payment_status: 'partial',
+    payment_status: "partial",
     remarks,
   });
 }
@@ -129,23 +145,31 @@ export async function markRentAsPartial(id: number, remarks?: string) {
 async function autoGenerateRentPayments(
   tenancyId: number,
   startDate: string,
-  monthlyRent: number
+  monthlyRent: number,
 ) {
   const start = new Date(startDate);
   const now = new Date();
 
   const startDay = start.getDate();
-  const payments: Omit<RentPayment, 'rent_id' | 'created_at'>[] = [];
+  const payments: Omit<RentPayment, "rent_id" | "created_at">[] = [];
 
   // Generate rent for each month where the full month has passed
   // Rent for month X is due on day startDay of month X+1
   // It's "pending" only after the due date has passed
 
-  let currentMonth = new Date(start.getFullYear(), start.getMonth() + 1, startDay);
+  let currentMonth = new Date(
+    start.getFullYear(),
+    start.getMonth() + 1,
+    startDay,
+  );
 
   while (currentMonth <= now) {
     // Only add as pending if this month's rent has become due (today is on or after the due date)
-    const dueDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), startDay);
+    const dueDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      startDay,
+    );
 
     if (dueDate <= now) {
       // The rent for the previous month (from startDay of prev month to startDay-1 of this month)
@@ -154,11 +178,11 @@ async function autoGenerateRentPayments(
 
       payments.push({
         tenancy_id: tenancyId,
-        rent_month: rentMonth.toISOString().split('T')[0],
+        rent_month: rentMonth.toISOString().split("T")[0],
         rent_amount: monthlyRent,
-        payment_status: 'pending',
+        payment_status: "pending",
         paid_date: null,
-        remarks: '',
+        remarks: "",
       });
     }
 
@@ -166,9 +190,7 @@ async function autoGenerateRentPayments(
   }
 
   if (payments.length > 0) {
-    const { error } = await supabase
-      .from('rent_payments')
-      .insert(payments);
+    const { error } = await supabase.from("rent_payments").insert(payments);
 
     if (error) throw error;
   }
@@ -177,27 +199,27 @@ async function autoGenerateRentPayments(
 // Dashboard queries
 export async function getDashboardMetrics() {
   const { data: properties } = await supabase
-    .from('properties')
-    .select('property_id', { count: 'exact' })
-    .eq('is_active', true);
+    .from("properties")
+    .select("property_id", { count: "exact" })
+    .eq("is_active", true);
 
   const { data: occupied } = await supabase
-    .from('tenancies')
-    .select('tenancy_id', { count: 'exact' })
-    .is('end_date', null);
+    .from("tenancies")
+    .select("tenancy_id", { count: "exact" })
+    .is("end_date", null);
 
   const { data: tenants } = await supabase
-    .from('tenants')
-    .select('tenant_id', { count: 'exact' });
+    .from("tenants")
+    .select("tenant_id", { count: "exact" });
 
   const { data: pendingRents } = await supabase
-    .from('rent_payments')
-    .select('rent_amount')
-    .neq('payment_status', 'paid');
+    .from("rent_payments")
+    .select("rent_amount")
+    .neq("payment_status", "paid");
 
   const totalPending = (pendingRents || []).reduce(
     (sum, r) => sum + (r.rent_amount || 0),
-    0
+    0,
   );
 
   return {
@@ -212,10 +234,10 @@ export async function getDashboardMetrics() {
 // Documents
 export async function getTenancyDocuments(tenancyId: number) {
   const { data, error } = await supabase
-    .from('tenancy_documents')
-    .select('*')
-    .eq('tenancy_id', tenancyId)
-    .order('uploaded_at', { ascending: false });
+    .from("tenancy_documents")
+    .select("*")
+    .eq("tenancy_id", tenancyId)
+    .order("uploaded_at", { ascending: false });
 
   if (error) throw error;
   return data as TenancyDocument[];
@@ -224,23 +246,23 @@ export async function getTenancyDocuments(tenancyId: number) {
 export async function uploadTenancyDocument(
   tenancyId: number,
   file: File,
-  documentType: string
+  documentType: string,
 ) {
   // Create a unique file path
-  const fileExt = file.name.split('.').pop();
+  const fileExt = file.name.split(".").pop();
   const fileName = `${tenancyId}_${Date.now()}.${fileExt}`;
   const filePath = `tenancy_${tenancyId}/${fileName}`;
 
   // Upload to storage
   const { error: uploadError } = await supabase.storage
-    .from('tenancy_documents')
+    .from("tenancy_documents")
     .upload(filePath, file, { upsert: false });
 
   if (uploadError) throw uploadError;
 
   // Add document record to database
   const { data, error: dbError } = await supabase
-    .from('tenancy_documents')
+    .from("tenancy_documents")
     .insert([
       {
         tenancy_id: tenancyId,
@@ -256,7 +278,7 @@ export async function uploadTenancyDocument(
 
   if (dbError) {
     // Clean up uploaded file if database insert fails
-    await supabase.storage.from('tenancy_documents').remove([filePath]);
+    await supabase.storage.from("tenancy_documents").remove([filePath]);
     throw dbError;
   }
 
@@ -265,26 +287,29 @@ export async function uploadTenancyDocument(
 
 export async function downloadTenancyDocument(filePath: string) {
   const { data, error } = await supabase.storage
-    .from('tenancy_documents')
+    .from("tenancy_documents")
     .download(filePath);
 
   if (error) throw error;
   return data;
 }
 
-export async function deleteTenancyDocument(documentId: number, filePath: string) {
+export async function deleteTenancyDocument(
+  documentId: number,
+  filePath: string,
+) {
   // Delete from storage
   const { error: storageError } = await supabase.storage
-    .from('tenancy_documents')
+    .from("tenancy_documents")
     .remove([filePath]);
 
   if (storageError) throw storageError;
 
   // Delete from database
   const { error: dbError } = await supabase
-    .from('tenancy_documents')
+    .from("tenancy_documents")
     .delete()
-    .eq('document_id', documentId);
+    .eq("document_id", documentId);
 
   if (dbError) throw dbError;
 }

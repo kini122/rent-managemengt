@@ -19,9 +19,9 @@ To enable document management for tenancies, you need to create a storage bucket
 
 4. **Set Bucket Policies**
    After creating the bucket, set up the following RLS policies:
-
    - **Click on the bucket** → "Policies" tab
    - **Create a new policy** for SELECT (Download):
+
      ```
      Policy name: Allow public read on tenancy_documents
      Target roles: postgres (or anon if using public access)
@@ -30,6 +30,7 @@ To enable document management for tenancies, you need to create a storage bucket
      ```
 
    - **Create a new policy** for INSERT (Upload):
+
      ```
      Policy name: Allow public insert on tenancy_documents
      Target roles: postgres (or anon if using public access)
@@ -48,6 +49,7 @@ To enable document management for tenancies, you need to create a storage bucket
 ## Verification
 
 Once the bucket is created with the correct policies:
+
 1. Navigate to Property Details page
 2. You should see the "Tenancy Documents" section
 3. Try uploading a document - it should work without errors
@@ -55,6 +57,7 @@ Once the bucket is created with the correct policies:
 ## Supported File Types
 
 The following file types are supported:
+
 - Documents: `.pdf`, `.doc`, `.docx`
 - Images: `.jpg`, `.jpeg`, `.png`
 - Spreadsheets: `.xlsx`, `.xls`
@@ -62,11 +65,13 @@ The following file types are supported:
 ## Troubleshooting
 
 If you get a "bucket not found" error:
+
 - Make sure the bucket name is exactly `tenancy_documents`
 - Verify the RLS policies are set to allow uploads/downloads
 - Check that you're logged into the correct Supabase project
 
 If uploads fail with permission errors:
+
 - Go to the bucket's Policies tab
 - Ensure the INSERT policy has `true` in the WITH CHECK condition
 - Make sure the target roles include the role used by your application

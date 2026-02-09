@@ -1,36 +1,36 @@
-import { useState, useEffect } from 'react';
-import type { TenancyDocument } from '@/types/index';
+import { useState, useEffect } from "react";
+import type { TenancyDocument } from "@/types/index";
 import {
   getTenancyDocuments,
   uploadTenancyDocument,
   downloadTenancyDocument,
   deleteTenancyDocument,
-} from '@/services/supabaseAdmin';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FileUp, Download, Trash2, Loader2, File } from 'lucide-react';
-import { toast } from 'sonner';
+} from "@/services/supabaseAdmin";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FileUp, Download, Trash2, Loader2, File } from "lucide-react";
+import { toast } from "sonner";
 
 export interface TenancyDocumentsProps {
   tenancyId: number;
 }
 
 const DOCUMENT_TYPES = [
-  'Agreement',
-  'ID Proof',
-  'Address Proof',
-  'Income Proof',
-  'Utility Bill',
-  'Bank Statement',
-  'Deposit Receipt',
-  'Other',
+  "Agreement",
+  "ID Proof",
+  "Address Proof",
+  "Income Proof",
+  "Utility Bill",
+  "Bank Statement",
+  "Deposit Receipt",
+  "Other",
 ];
 
 export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
   const [documents, setDocuments] = useState<TenancyDocument[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [selectedType, setSelectedType] = useState('Agreement');
+  const [selectedType, setSelectedType] = useState("Agreement");
 
   useEffect(() => {
     loadDocuments();
@@ -42,7 +42,9 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
       const data = await getTenancyDocuments(tenancyId);
       setDocuments(data);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load documents');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load documents",
+      );
     } finally {
       setLoading(false);
     }
@@ -55,12 +57,14 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
     try {
       setUploading(true);
       await uploadTenancyDocument(tenancyId, file, selectedType);
-      toast.success('Document uploaded successfully');
+      toast.success("Document uploaded successfully");
       await loadDocuments();
       // Reset input
-      e.target.value = '';
+      e.target.value = "";
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to upload document",
+      );
     } finally {
       setUploading(false);
     }
@@ -70,7 +74,7 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
     try {
       const blob = await downloadTenancyDocument(document.file_path);
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = document.file_name;
       document.body.appendChild(link);
@@ -78,7 +82,9 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to download document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to download document",
+      );
     }
   };
 
@@ -89,16 +95,20 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
 
     try {
       await deleteTenancyDocument(document.document_id, document.file_path);
-      toast.success('Document deleted successfully');
+      toast.success("Document deleted successfully");
       await loadDocuments();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete document",
+      );
     }
   };
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-6">
-      <h3 className="text-lg font-bold text-slate-900 mb-6">Tenancy Documents</h3>
+      <h3 className="text-lg font-bold text-slate-900 mb-6">
+        Tenancy Documents
+      </h3>
 
       {/* Upload Section */}
       <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -182,11 +192,14 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
                         </span>
                         <span>{(document.file_size / 1024).toFixed(2)} KB</span>
                         <span>
-                          {new Date(document.uploaded_at).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })}
+                          {new Date(document.uploaded_at).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
                     </div>

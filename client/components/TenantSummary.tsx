@@ -1,16 +1,20 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import type { Property, Tenancy, Tenant } from '@/types/index';
-import { useState } from 'react';
-import { Loader2, MessageCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { updateTenant, updateTenancy, endTenancy } from '@/services/supabaseAdmin';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Property, Tenancy, Tenant } from "@/types/index";
+import { useState } from "react";
+import { Loader2, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
+import {
+  updateTenant,
+  updateTenancy,
+  endTenancy,
+} from "@/services/supabaseAdmin";
 
 function generateWhatsAppLink(phone: string): string {
   // Format phone number: remove any non-digit characters and add country code if needed
-  let formattedPhone = phone.replace(/\D/g, '');
-  if (!formattedPhone.startsWith('91') && formattedPhone.length === 10) {
-    formattedPhone = '91' + formattedPhone;
+  let formattedPhone = phone.replace(/\D/g, "");
+  if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+    formattedPhone = "91" + formattedPhone;
   }
 
   return `https://wa.me/${formattedPhone}`;
@@ -34,12 +38,12 @@ export function TenantSummary({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({
-    tenantName: tenancy?.tenant.name || '',
-    phone: tenancy?.tenant.phone || '',
-    startDate: tenancy?.start_date || '',
-    status: tenancy?.status || 'active',
-    monthlyRent: tenancy?.monthly_rent.toString() || '',
-    advanceAmount: tenancy?.advance_amount.toString() || '',
+    tenantName: tenancy?.tenant.name || "",
+    phone: tenancy?.tenant.phone || "",
+    startDate: tenancy?.start_date || "",
+    status: tenancy?.status || "active",
+    monthlyRent: tenancy?.monthly_rent.toString() || "",
+    advanceAmount: tenancy?.advance_amount.toString() || "",
   });
 
   const handleSave = async () => {
@@ -47,7 +51,10 @@ export function TenantSummary({
       setIsSaving(true);
 
       // Update tenant
-      if (editData.tenantName !== tenancy?.tenant.name || editData.phone !== tenancy?.tenant.phone) {
+      if (
+        editData.tenantName !== tenancy?.tenant.name ||
+        editData.phone !== tenancy?.tenant.phone
+      ) {
         await updateTenant(tenancy!.tenant.tenant_id, {
           name: editData.tenantName,
           phone: editData.phone,
@@ -64,16 +71,18 @@ export function TenantSummary({
         await updateTenancy(tenancy!.tenancy_id, {
           monthly_rent: parseFloat(editData.monthlyRent),
           advance_amount: parseFloat(editData.advanceAmount),
-          status: editData.status as 'active' | 'completed' | 'terminated',
+          status: editData.status as "active" | "completed" | "terminated",
           start_date: editData.startDate,
         });
       }
 
-      toast.success('Tenancy details updated successfully');
+      toast.success("Tenancy details updated successfully");
       setIsEditing(false);
       onEdit?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save changes');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save changes",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -81,28 +90,32 @@ export function TenantSummary({
 
   const handleCancel = () => {
     setEditData({
-      tenantName: tenancy?.tenant.name || '',
-      phone: tenancy?.tenant.phone || '',
-      startDate: tenancy?.start_date || '',
-      status: tenancy?.status || 'active',
-      monthlyRent: tenancy?.monthly_rent.toString() || '',
-      advanceAmount: tenancy?.advance_amount.toString() || '',
+      tenantName: tenancy?.tenant.name || "",
+      phone: tenancy?.tenant.phone || "",
+      startDate: tenancy?.start_date || "",
+      status: tenancy?.status || "active",
+      monthlyRent: tenancy?.monthly_rent.toString() || "",
+      advanceAmount: tenancy?.advance_amount.toString() || "",
     });
     setIsEditing(false);
   };
 
   const handleEndTenancy = async () => {
-    if (!confirm('Are you sure you want to end this tenancy? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to end this tenancy? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
     try {
       setIsSaving(true);
       await endTenancy(tenancy!.tenancy_id);
-      toast.success('Tenancy ended successfully');
+      toast.success("Tenancy ended successfully");
       onTenancyEnded?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to end tenancy');
+      toast.error(err instanceof Error ? err.message : "Failed to end tenancy");
     } finally {
       setIsSaving(false);
     }
@@ -112,9 +125,16 @@ export function TenantSummary({
     return (
       <div className="bg-white rounded-lg border border-slate-200 p-6">
         <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">Property Vacant</h3>
-          <p className="text-slate-600 mb-4">No active tenancy assigned to this property</p>
-          <Button onClick={onCreateTenancy} className="bg-blue-600 hover:bg-blue-700">
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            Property Vacant
+          </h3>
+          <p className="text-slate-600 mb-4">
+            No active tenancy assigned to this property
+          </p>
+          <Button
+            onClick={onCreateTenancy}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             Create New Tenancy
           </Button>
         </div>
@@ -126,7 +146,9 @@ export function TenantSummary({
     <div className="bg-white rounded-lg border border-slate-200 p-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">{property.address}</h2>
+          <h2 className="text-2xl font-bold text-slate-900">
+            {property.address}
+          </h2>
           <p className="text-slate-600 mt-1">{property.details}</p>
         </div>
         <div className="flex gap-2">
@@ -156,7 +178,7 @@ export function TenantSummary({
               >
                 Edit
               </button>
-              {tenancy.status === 'active' && (
+              {tenancy.status === "active" && (
                 <button
                   onClick={handleEndTenancy}
                   disabled={isSaving}
@@ -173,16 +195,22 @@ export function TenantSummary({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Tenant Info */}
         <div>
-          <label className="text-sm font-medium text-slate-600">Tenant Name</label>
+          <label className="text-sm font-medium text-slate-600">
+            Tenant Name
+          </label>
           {isEditing ? (
             <Input
               type="text"
               value={editData.tenantName}
-              onChange={(e) => setEditData({ ...editData, tenantName: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, tenantName: e.target.value })
+              }
               className="mt-1"
             />
           ) : (
-            <p className="text-lg font-semibold text-slate-900 mt-1">{tenancy.tenant.name}</p>
+            <p className="text-lg font-semibold text-slate-900 mt-1">
+              {tenancy.tenant.name}
+            </p>
           )}
         </div>
 
@@ -192,12 +220,16 @@ export function TenantSummary({
             <Input
               type="tel"
               value={editData.phone}
-              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, phone: e.target.value })
+              }
               className="mt-1"
             />
           ) : (
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-lg font-semibold text-slate-900">{tenancy.tenant.phone}</p>
+              <p className="text-lg font-semibold text-slate-900">
+                {tenancy.tenant.phone}
+              </p>
               {tenancy.tenant.phone && (
                 <a
                   href={generateWhatsAppLink(tenancy.tenant.phone)}
@@ -216,20 +248,24 @@ export function TenantSummary({
 
         {/* Tenancy Info */}
         <div>
-          <label className="text-sm font-medium text-slate-600">Start Date</label>
+          <label className="text-sm font-medium text-slate-600">
+            Start Date
+          </label>
           {isEditing ? (
             <Input
               type="date"
               value={editData.startDate}
-              onChange={(e) => setEditData({ ...editData, startDate: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, startDate: e.target.value })
+              }
               className="mt-1"
             />
           ) : (
             <p className="text-lg font-semibold text-slate-900 mt-1">
-              {new Date(tenancy.start_date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
+              {new Date(tenancy.start_date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
               })}
             </p>
           )}
@@ -243,7 +279,10 @@ export function TenantSummary({
               onChange={(e) =>
                 setEditData({
                   ...editData,
-                  status: e.target.value as 'active' | 'completed' | 'terminated',
+                  status: e.target.value as
+                    | "active"
+                    | "completed"
+                    | "terminated",
                 })
               }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
@@ -262,33 +301,41 @@ export function TenantSummary({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-600">Monthly Rent</label>
+          <label className="text-sm font-medium text-slate-600">
+            Monthly Rent
+          </label>
           {isEditing ? (
             <Input
               type="number"
               value={editData.monthlyRent}
-              onChange={(e) => setEditData({ ...editData, monthlyRent: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, monthlyRent: e.target.value })
+              }
               className="mt-1"
             />
           ) : (
             <p className="text-lg font-semibold text-slate-900 mt-1">
-              ₹{tenancy.monthly_rent.toLocaleString('en-IN')}
+              ₹{tenancy.monthly_rent.toLocaleString("en-IN")}
             </p>
           )}
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-600">Advance Amount</label>
+          <label className="text-sm font-medium text-slate-600">
+            Advance Amount
+          </label>
           {isEditing ? (
             <Input
               type="number"
               value={editData.advanceAmount}
-              onChange={(e) => setEditData({ ...editData, advanceAmount: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, advanceAmount: e.target.value })
+              }
               className="mt-1"
             />
           ) : (
             <p className="text-lg font-semibold text-slate-900 mt-1">
-              ₹{tenancy.advance_amount.toLocaleString('en-IN')}
+              ₹{tenancy.advance_amount.toLocaleString("en-IN")}
             </p>
           )}
         </div>

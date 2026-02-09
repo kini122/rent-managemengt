@@ -23,7 +23,7 @@ export interface Tenancy {
   end_date: string | null;
   monthly_rent: number;
   advance_amount: number;
-  status: 'active' | 'completed' | 'terminated';
+  status: "active" | "completed" | "terminated";
   created_at: string;
 }
 
@@ -32,7 +32,7 @@ export interface RentPayment {
   tenancy_id: number;
   rent_month: string;
   rent_amount: number;
-  payment_status: 'paid' | 'pending' | 'partial';
+  payment_status: "paid" | "pending" | "partial";
   paid_date: string | null;
   remarks: string;
   created_at: string;
