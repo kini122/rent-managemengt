@@ -19,8 +19,6 @@ function generateWhatsAppLink(phone: string): string {
 export interface TenantSummaryProps {
   property: Property;
   tenancy?: (Tenancy & { tenant: Tenant }) | null;
-  pendingRentCount?: number;
-  pendingRentAmount?: number;
   onEdit?: () => void;
   onCreateTenancy?: () => void;
   onTenancyEnded?: () => void;
@@ -29,8 +27,6 @@ export interface TenantSummaryProps {
 export function TenantSummary({
   property,
   tenancy,
-  pendingRentCount = 0,
-  pendingRentAmount = 0,
   onEdit,
   onCreateTenancy,
   onTenancyEnded,
