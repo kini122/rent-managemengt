@@ -42,28 +42,28 @@ export default function Home() {
         {error && (
           <div className={`mb-6 p-4 rounded-lg border ${
             isRLSError(error)
-              ? 'bg-amber-50 border-amber-200'
+              ? 'bg-red-50 border-red-200'
               : 'bg-red-50 border-red-200'
           }`}>
             <div className="flex gap-3">
               <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                isRLSError(error) ? 'text-amber-600' : 'text-red-600'
+                isRLSError(error) ? 'text-red-600' : 'text-red-600'
               }`} />
               <div>
                 <p className={`font-medium ${
-                  isRLSError(error) ? 'text-amber-900' : 'text-red-700'
+                  isRLSError(error) ? 'text-red-900' : 'text-red-700'
                 }`}>
-                  {isRLSError(error) ? 'Setup Required' : 'Error'}
+                  {isRLSError(error) ? 'Database Security Issue' : 'Error'}
                 </p>
                 <p className={`text-sm mt-1 ${
-                  isRLSError(error) ? 'text-amber-800' : 'text-red-600'
+                  isRLSError(error) ? 'text-red-800' : 'text-red-600'
                 }`}>
                   {error}
                 </p>
                 {isRLSError(error) && (
-                  <Link to="/setup" className="mt-3 inline-block">
-                    <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
-                      Go to Setup
+                  <Link to="/rls-fix" className="mt-3 inline-block">
+                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                      Fix RLS Issues
                     </Button>
                   </Link>
                 )}
