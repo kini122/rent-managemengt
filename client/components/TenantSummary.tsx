@@ -2,13 +2,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Property, Tenancy, Tenant } from '@/types/index';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateTenant, updateTenancy, endTenancy } from '@/services/supabaseAdmin';
 
 export interface TenantSummaryProps {
   property: Property;
   tenancy?: (Tenancy & { tenant: Tenant }) | null;
+  pendingRentCount?: number;
+  pendingRentAmount?: number;
   onEdit?: () => void;
   onCreateTenancy?: () => void;
   onTenancyEnded?: () => void;
