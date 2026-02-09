@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePropertyDetail } from "@/hooks/useSupabase";
 import { TenantSummary } from "@/components/TenantSummary";
 import { RentTable } from "@/components/RentTable";
