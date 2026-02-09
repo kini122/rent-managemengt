@@ -66,6 +66,7 @@ ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rent_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy_documents ENABLE ROW LEVEL SECURITY;
 
 -- Create policies allowing public access (MVP - no authentication required)
 -- Properties table policies
