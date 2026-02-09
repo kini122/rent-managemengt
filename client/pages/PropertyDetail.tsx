@@ -69,7 +69,7 @@ export default function PropertyDetail() {
 
   // Calculate pending rent details
   const pendingRentDetails = rentPayments
-    .filter(payment => payment.status === 'pending')
+    .filter(payment => payment.payment_status === 'pending')
     .reduce((acc, payment) => {
       return {
         count: acc.count + 1,
