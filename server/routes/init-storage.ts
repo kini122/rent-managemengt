@@ -61,21 +61,12 @@ export const handleInitStorage: RequestHandler = async (req, res) => {
       }
 
       console.log(`Created storage bucket: ${BUCKET_NAME}`);
+    } else {
+      console.log(`Storage bucket already exists: ${BUCKET_NAME}`);
     }
 
-    // Set up bucket policies for authenticated users
-    // This allows authenticated users to upload files
-    const { error: policyError } = await supabaseAdmin.storage.updateBucketPolicies(
-      BUCKET_NAME,
-      {
-        authenticated: "authenticated",
-        unauthenticated: "unauthenticated",
-      }
-    );
-
-    // Note: The above may not work for RLS policies. 
-    // Proper RLS policies need to be set up in Supabase dashboard
-    // For now, we'll proceed without strict RLS
+    // Bucket policies are managed through Supabase dashboard
+    // The bucket is now ready for use
 
     return res.json({
       success: true,
