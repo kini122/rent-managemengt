@@ -70,7 +70,12 @@ export interface PendingRentDetailsProps {
   propertyAddress?: string;
 }
 
-export function PendingRentDetails({ payments }: PendingRentDetailsProps) {
+export function PendingRentDetails({
+  payments,
+  tenantName = '',
+  tenantPhone = '',
+  propertyAddress = '',
+}: PendingRentDetailsProps) {
   const pendingAndPartialPayments = payments.filter(
     (payment) => payment.payment_status === 'pending' || payment.payment_status === 'partial'
   );
@@ -91,11 +96,34 @@ export function PendingRentDetails({ payments }: PendingRentDetailsProps) {
     return sum + payment.rent_amount;
   }, 0);
 
+  // Generate WhatsApp message
+  const whatsAppMessage =
+    tenantName && tenantPhone && propertyAddress
+      ? generateWhatsAppNotifyMessage(tenantName, propertyAddress, pendingAndPartialPayments)
+      : '';
+
+  const whatsAppLink =
+    tenantPhone && whatsAppMessage ? generateWhatsAppLink(tenantPhone, whatsAppMessage) : '';
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <AlertCircle className="w-5 h-5 text-red-600" />
-        <h3 className="text-lg font-bold text-slate-900">Pending & Partial Rent Details</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-red-600" />
+          <h3 className="text-lg font-bold text-slate-900">Pending & Partial Rent Details</h3>
+        </div>
+        {whatsAppLink && (
+          <a
+            href={whatsAppLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors"
+            title="Notify tenant about pending rent"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Notify Tenant
+          </a>
+        )}
       </div>
 
       <div className="overflow-x-auto">
