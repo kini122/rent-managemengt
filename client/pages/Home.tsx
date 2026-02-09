@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
 import { isConfigured } from '@/lib/supabaseClient';
+import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings } from 'lucide-react';
+import { Loader2, Settings, AlertCircle } from 'lucide-react';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
