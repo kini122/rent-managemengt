@@ -1,8 +1,73 @@
 import type { RentPayment } from '@/types/index';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, MessageCircle } from 'lucide-react';
+
+function generateWhatsAppNotifyMessage(
+  tenantName: string,
+  propertyAddress: string,
+  payments: RentPayment[]
+): string {
+  let message = `Hello ${tenantName},\n\n`;
+  message += `This is to notify you regarding your rental property at:\n${propertyAddress}\n\n`;
+  message += `📋 PENDING & PARTIAL RENT DETAILS:\n\n`;
+
+  // Create table structure with aligned columns
+  message += `Month          | Status   | Amount\n`;
+  message += `────────────────────────────────────\n`;
+
+  let totalOutstanding = 0;
+
+  for (const payment of payments) {
+    const monthName = new Date(payment.rent_month).toLocaleDateString('en-GB', {
+      month: 'short',
+      year: '2-digit',
+    });
+
+    let outstandingAmount = payment.rent_amount;
+    if (payment.payment_status === 'partial' && payment.remarks) {
+      const match = payment.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+      if (match) {
+        outstandingAmount = parseInt(match[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    totalOutstanding += outstandingAmount;
+
+    const status = payment.payment_status === 'pending' ? 'Pending' : 'Partial';
+    const amount = `₹${outstandingAmount.toLocaleString('en-IN')}`;
+
+    // Format with proper spacing
+    const paddedMonth = monthName.padEnd(15);
+    const paddedStatus = status.padEnd(9);
+    message += `${paddedMonth}| ${paddedStatus}| ${amount}\n`;
+  }
+
+  message += `────────────────────────────────────\n`;
+  message += `TOTAL OUTSTANDING: ₹${totalOutstanding.toLocaleString('en-IN')}\n\n`;
+  message += `Kindly arrange to pay the pending and partial rent at your earliest convenience.\n\n`;
+  message += `For any queries, please feel free to reach out.\n`;
+  message += `Thank you.`;
+
+  return message;
+}
+
+function generateWhatsAppLink(
+  phone: string,
+  message: string
+): string {
+  let formattedPhone = phone.replace(/\D/g, '');
+  if (!formattedPhone.startsWith('91') && formattedPhone.length === 10) {
+    formattedPhone = '91' + formattedPhone;
+  }
+
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+}
 
 export interface PendingRentDetailsProps {
   payments: RentPayment[];
+  tenantName?: string;
+  tenantPhone?: string;
+  propertyAddress?: string;
 }
 
 export function PendingRentDetails({ payments }: PendingRentDetailsProps) {
