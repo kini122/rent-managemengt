@@ -38,6 +38,17 @@ export interface RentPayment {
   created_at: string;
 }
 
+export interface TenancyDocument {
+  document_id: number;
+  tenancy_id: number;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  file_type: string;
+  document_type: string;
+  uploaded_at: string;
+}
+
 export interface PropertyWithTenant extends Property {
   tenancy?: Tenancy & { tenant: Tenant };
   pending_count: number;
