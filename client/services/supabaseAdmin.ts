@@ -208,3 +208,83 @@ export async function getDashboardMetrics() {
     totalPendingRent: totalPending,
   };
 }
+
+// Documents
+export async function getTenancyDocuments(tenancyId: number) {
+  const { data, error } = await supabase
+    .from('tenancy_documents')
+    .select('*')
+    .eq('tenancy_id', tenancyId)
+    .order('uploaded_at', { ascending: false });
+
+  if (error) throw error;
+  return data as TenancyDocument[];
+}
+
+export async function uploadTenancyDocument(
+  tenancyId: number,
+  file: File,
+  documentType: string
+) {
+  // Create a unique file path
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${tenancyId}_${Date.now()}.${fileExt}`;
+  const filePath = `tenancy_${tenancyId}/${fileName}`;
+
+  // Upload to storage
+  const { error: uploadError } = await supabase.storage
+    .from('tenancy_documents')
+    .upload(filePath, file, { upsert: false });
+
+  if (uploadError) throw uploadError;
+
+  // Add document record to database
+  const { data, error: dbError } = await supabase
+    .from('tenancy_documents')
+    .insert([
+      {
+        tenancy_id: tenancyId,
+        file_name: file.name,
+        file_path: filePath,
+        file_size: file.size,
+        file_type: file.type,
+        document_type: documentType,
+      },
+    ])
+    .select()
+    .single();
+
+  if (dbError) {
+    // Clean up uploaded file if database insert fails
+    await supabase.storage.from('tenancy_documents').remove([filePath]);
+    throw dbError;
+  }
+
+  return data;
+}
+
+export async function downloadTenancyDocument(filePath: string) {
+  const { data, error } = await supabase.storage
+    .from('tenancy_documents')
+    .download(filePath);
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTenancyDocument(documentId: number, filePath: string) {
+  // Delete from storage
+  const { error: storageError } = await supabase.storage
+    .from('tenancy_documents')
+    .remove([filePath]);
+
+  if (storageError) throw storageError;
+
+  // Delete from database
+  const { error: dbError } = await supabase
+    .from('tenancy_documents')
+    .delete()
+    .eq('document_id', documentId);
+
+  if (dbError) throw dbError;
+}
