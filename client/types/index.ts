@@ -47,6 +47,8 @@ export interface TenancyDocument {
   file_type: string;
   document_type: string;
   uploaded_at: string;
+  signed_url?: string;
+  url_expires_at?: string;
 }
 
 export interface PropertyWithTenant extends Property {

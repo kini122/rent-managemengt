@@ -137,26 +137,27 @@ export function RentTable({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Month
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Rent Amount
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="hidden lg:table-cell px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Paid Date
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="hidden lg:table-cell px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Remarks
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+              <th className="px-4 md:px-6 py-3 text-left font-semibold text-slate-900">
                 Actions
               </th>
             </tr>
@@ -184,13 +185,13 @@ export function RentTable({
                   key={payment.rent_id}
                   className="hover:bg-slate-50 transition-colors"
                 >
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">
+                  <td className="px-4 md:px-6 py-4 font-medium text-slate-900 text-sm">
                     {monthStr}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-900">
+                  <td className="px-4 md:px-6 py-4 text-slate-900 font-medium whitespace-nowrap">
                     ₹{payment.rent_amount.toLocaleString("en-IN")}
                   </td>
-                  <td className="px-6 py-4 space-y-2">
+                  <td className="px-4 md:px-6 py-4 space-y-2">
                     {isEditing ? (
                       <>
                         <select
@@ -274,7 +275,7 @@ export function RentTable({
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="hidden lg:table-cell px-4 md:px-6 py-4 text-sm">
                     {isEditing ? (
                       <Input
                         type="date"
@@ -288,13 +289,13 @@ export function RentTable({
                             },
                           })
                         }
-                        className="w-full"
+                        className="w-full text-sm"
                       />
                     ) : (
                       <span className="text-slate-600">{paidDateStr}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="hidden lg:table-cell px-4 md:px-6 py-4 text-sm">
                     {isEditing ? (
                       <Input
                         type="text"
@@ -309,7 +310,7 @@ export function RentTable({
                             },
                           })
                         }
-                        className="w-full"
+                        className="w-full text-sm"
                       />
                     ) : (
                       <span className="text-slate-600 max-w-xs truncate block">
@@ -317,7 +318,7 @@ export function RentTable({
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm space-x-2">
+                  <td className="px-4 md:px-6 py-4 text-sm space-x-1">
                     {isEditing ? (
                       <>
                         <button
@@ -378,6 +379,144 @@ export function RentTable({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-slate-200">
+        {payments.map((payment) => {
+          const statusColor = getStatusColor(payment.payment_status);
+          const monthDate = new Date(payment.rent_month);
+          const monthStr = monthDate.toLocaleDateString("en-GB", {
+            month: "long",
+            year: "numeric",
+          });
+          const paidDateStr = payment.paid_date
+            ? new Date(payment.paid_date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : "-";
+
+          const isEditing = editingId === payment.rent_id;
+
+          return (
+            <div key={payment.rent_id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-bold text-slate-900">{monthStr}</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">
+                    ₹{payment.rent_amount.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
+                    statusColor.bg,
+                    statusColor.text,
+                  )}
+                >
+                  {payment.payment_status}
+                </span>
+              </div>
+
+              {isEditing && editData[payment.rent_id]?.status === "partial" && (
+                <div className="text-xs space-y-2">
+                  <label className="block font-medium text-slate-700">
+                    Paid Amount (₹)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={editData[payment.rent_id]?.paidAmount || ""}
+                    onChange={(e) => {
+                      const amount = e.target.value ? parseInt(e.target.value) : 0;
+                      setEditData({
+                        ...editData,
+                        [payment.rent_id]: {
+                          ...editData[payment.rent_id],
+                          paidAmount: amount,
+                        },
+                      });
+                    }}
+                    className="w-full text-sm"
+                    max={payment.rent_amount}
+                  />
+                </div>
+              )}
+
+              <div className="text-xs space-y-2 border-t border-slate-200 pt-3">
+                <div>
+                  <p className="text-slate-500 font-medium">Paid Date</p>
+                  <p className="text-slate-900">{paidDateStr}</p>
+                </div>
+                {payment.remarks && (
+                  <div>
+                    <p className="text-slate-500 font-medium">Notes</p>
+                    <p className="text-slate-900 line-clamp-2">{payment.remarks}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-200">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={() => handleSaveEdit(payment)}
+                      disabled={savingId === payment.rent_id}
+                      className="flex-1 px-3 py-2 text-emerald-600 hover:bg-emerald-50 rounded transition-colors disabled:opacity-50 font-medium text-sm"
+                    >
+                      {savingId === payment.rent_id ? (
+                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      ) : (
+                        <Check className="w-4 h-4 inline mr-2" />
+                      )}
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={savingId === payment.rent_id}
+                      className="flex-1 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded transition-colors disabled:opacity-50 font-medium text-sm"
+                    >
+                      <X className="w-4 h-4 inline mr-2" />
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {isEditable && (
+                      <button
+                        onClick={() => handleEditClick(payment)}
+                        className="flex-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded transition-colors font-medium text-sm"
+                      >
+                        <Edit2 className="w-4 h-4 inline mr-2" />
+                        Edit
+                      </button>
+                    )}
+                    {isEditable && payment.payment_status !== "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMarkPaid(payment.rent_id)}
+                        disabled={loading === payment.rent_id}
+                        className="flex-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      >
+                        {loading === payment.rent_id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <span className="text-xs">Marking...</span>
+                          </>
+                        ) : (
+                          <span className="text-xs">Mark Paid</span>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
