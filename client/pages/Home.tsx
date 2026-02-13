@@ -33,9 +33,21 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!isConfigured && (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-700 font-medium">
+            <p className="text-amber-700 font-medium mb-3">
               ⚠️ Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.
             </p>
+            <div className="flex gap-2">
+              <Link to="/storage-migration">
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
+                  Setup Storage
+                </Button>
+              </Link>
+              <Link to="/debug">
+                <Button size="sm" variant="outline" className="border-amber-200">
+                  Check Status
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
 

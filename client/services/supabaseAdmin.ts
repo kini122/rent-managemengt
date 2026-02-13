@@ -248,75 +248,129 @@ export async function uploadTenancyDocument(
   file: File,
   documentType: string,
 ) {
-  // Validate file size (50MB limit)
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  // Validate file size (100MB limit)
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error(`File size exceeds 50MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    throw new Error(
+      `File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`
+    );
   }
 
-  // Create a unique file path
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${tenancyId}_${Date.now()}.${fileExt}`;
-  const filePath = `tenancy_${tenancyId}/${fileName}`;
-
   try {
-    // Upload to storage with better error handling
-    const { error: uploadError } = await supabase.storage
-      .from("tenancy_documents")
-      .upload(filePath, file, { upsert: false });
+    // Convert file to base64 for transmission
+    const fileData = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(",")[1]; // Remove data:application/octet-stream; base64, prefix
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-    if (uploadError) {
-      // Provide user-friendly error messages
-      if (uploadError.message.includes("bucket") || uploadError.message.includes("not found")) {
-        throw new Error("Storage bucket not found. Initializing storage... Please try again.");
-      }
-      if (uploadError.message.includes("permission") || uploadError.message.includes("unauthorized")) {
-        throw new Error("Permission denied. Unable to upload document.");
-      }
-      throw new Error(`Upload failed: ${uploadError.message}`);
+    // Upload to backend endpoint (uses service role - no RLS issues)
+    const uploadResponse = await fetch("/api/documents/upload", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tenancyId,
+        documentType,
+        fileData,
+        fileName: file.name,
+      }),
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      throw new Error(errorData.message || "Upload failed");
     }
 
-    // Add document record to database
+    const uploadResult = await uploadResponse.json();
+
+    if (!uploadResult.success) {
+      throw new Error(uploadResult.message || "Upload failed");
+    }
+
+    // Store document record in database with signed URL
     const { data, error: dbError } = await supabase
       .from("tenancy_documents")
       .insert([
         {
           tenancy_id: tenancyId,
           file_name: file.name,
-          file_path: filePath,
-          file_size: file.size,
+          file_path: uploadResult.file.filePath,
+          file_size: uploadResult.file.fileSize,
           file_type: file.type,
           document_type: documentType,
+          signed_url: uploadResult.file.downloadUrl,
+          url_expires_at: new Date(
+            Date.now() + uploadResult.file.expiresIn * 1000
+          ).toISOString(),
         },
       ])
       .select()
       .single();
 
     if (dbError) {
-      // Clean up uploaded file if database insert fails
-      try {
-        await supabase.storage.from("tenancy_documents").remove([filePath]);
-      } catch (cleanupError) {
-        console.error("Failed to cleanup uploaded file:", cleanupError);
-      }
       throw new Error(`Database error: ${dbError.message}`);
     }
 
     return data;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred during upload";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred during upload";
     console.error("Document upload error:", errorMessage);
     throw new Error(errorMessage);
   }
 }
 
-export async function downloadTenancyDocument(filePath: string) {
-  const { data, error } = await supabase.storage
-    .from("tenancy_documents")
-    .download(filePath);
+export async function downloadTenancyDocument(
+  document: TenancyDocument
+) {
+  try {
+    // Check if signed URL is still valid
+    let downloadUrl = document.signed_url;
 
-  if (error) throw error;
-  return data;
+    // If URL might be expired, refresh it
+    if (document.url_expires_at) {
+      const expiresAt = new Date(document.url_expires_at);
+      const now = new Date();
+      const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+
+      // If less than 5 minutes remaining, refresh the URL
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        const refreshResponse = await fetch("/api/documents/refresh-url", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filePath: document.file_path,
+          }),
+        });
+
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          downloadUrl = refreshData.downloadUrl;
+        }
+      }
+    }
+
+    // Use signed URL to download
+    const response = await fetch(downloadUrl);
+    if (!response.ok) {
+      throw new Error("Failed to download file");
+    }
+
+    return await response.blob();
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to download document";
+    throw new Error(errorMessage);
+  }
 }
 
 export async function deleteTenancyDocument(

@@ -14,6 +14,7 @@ import AdminProperties from "./pages/AdminProperties";
 import Setup from "./pages/Setup";
 import RLSFix from "./pages/RLSFix";
 import Debug from "./pages/Debug";
+import StorageMigration from "./pages/StorageMigration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const AppContent = () => {
         <Route path="/debug" element={<Debug />} />
         <Route path="/rls-fix" element={<RLSFix />} />
         <Route path="/setup" element={<Setup />} />
+        <Route path="/storage-migration" element={<StorageMigration />} />
         <Route path="/" element={<Home />} />
         <Route path="/property/:propertyId" element={<PropertyDetail />} />
         <Route path="/admin" element={<AdminDashboard />} />
