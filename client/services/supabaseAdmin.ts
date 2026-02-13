@@ -280,6 +280,7 @@ export async function uploadTenancyDocument(
         documentType,
         fileData,
         fileName: file.name,
+        fileType: file.type, // Send the actual file MIME type
       }),
     });
 

@@ -8,9 +8,36 @@ const BUCKET_NAME = "tenancy_documents";
  * Uses service role key for backend authentication - no RLS issues
  * Returns signed URL for secure file access
  */
+// Map file extensions to MIME types
+function getMimeType(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  const mimeTypes: Record<string, string> = {
+    // Documents
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    // Images
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    // Text
+    txt: "text/plain",
+    csv: "text/csv",
+    // Default
+    default: "application/octet-stream",
+  };
+
+  return mimeTypes[ext] || mimeTypes.default;
+}
+
 export const handleDocumentUpload: RequestHandler = async (req, res) => {
   try {
-    const { tenancyId, documentType, fileData, fileName } = req.body;
+    const { tenancyId, documentType, fileData, fileName, fileType } = req.body;
 
     if (!tenancyId || !documentType || !fileData || !fileName) {
       return res.status(400).json({
@@ -41,12 +68,15 @@ export const handleDocumentUpload: RequestHandler = async (req, res) => {
     // Convert base64 data to Buffer
     const fileBuffer = Buffer.from(fileData, "base64");
 
+    // Determine correct MIME type (from client if provided, otherwise from extension)
+    const contentType = fileType || getMimeType(fileName);
+
     // Upload file to storage bucket
     const { error: uploadError, data: uploadData } =
       await supabaseAdmin.storage
         .from(BUCKET_NAME)
         .upload(filePath, fileBuffer, {
-          contentType: "application/octet-stream",
+          contentType,
           upsert: false,
         });
 
