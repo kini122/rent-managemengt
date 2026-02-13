@@ -2,11 +2,6 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "env": [
-    "VITE_SUPABASE_URL",
-    "VITE_SUPABASE_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY"
-  ],
   "framework": "vite",
   "outputDirectory": "dist",
   "regions": ["iad1"]
