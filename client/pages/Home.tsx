@@ -49,7 +49,7 @@ export default function Home() {
               <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
                 isRLSError(error) ? 'text-red-600' : 'text-red-600'
               }`} />
-              <div>
+              <div className="flex-1">
                 <p className={`font-medium ${
                   isRLSError(error) ? 'text-red-900' : 'text-red-700'
                 }`}>
@@ -61,11 +61,18 @@ export default function Home() {
                   {error}
                 </p>
                 {isRLSError(error) && (
-                  <Link to="/rls-fix" className="mt-3 inline-block">
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                      Fix RLS Issues
-                    </Button>
-                  </Link>
+                  <div className="mt-4 flex gap-2">
+                    <Link to="/rls-fix">
+                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                        View RLS Fix
+                      </Button>
+                    </Link>
+                    <Link to="/debug">
+                      <Button size="sm" variant="outline" className="border-red-200">
+                        Check Status
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
