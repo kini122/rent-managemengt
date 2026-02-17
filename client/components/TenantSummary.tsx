@@ -143,21 +143,21 @@ export function TenantSummary({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6">
-      <div className="flex items-start justify-between mb-6">
+    <div className="bg-white rounded-lg border border-slate-200 p-4 md:p-6">
+      <div className="flex flex-col md:flex-row items-start md:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
             {property.address}
           </h2>
-          <p className="text-slate-600 mt-1">{property.details}</p>
+          <p className="text-slate-600 mt-1 text-sm md:text-base">{property.details}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {isEditing ? (
             <>
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="gap-2"
+                className="gap-2 flex-1 md:flex-none"
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save
@@ -166,6 +166,7 @@ export function TenantSummary({
                 variant="outline"
                 onClick={handleCancel}
                 disabled={isSaving}
+                className="flex-1 md:flex-none"
               >
                 Cancel
               </Button>
@@ -174,15 +175,15 @@ export function TenantSummary({
             <>
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="flex-1 md:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-100"
               >
-                Edit
+                Edit Details
               </button>
               {tenancy.status === "active" && (
                 <button
                   onClick={handleEndTenancy}
                   disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 md:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 border border-red-100"
                 >
                   End Tenancy
                 </button>
@@ -192,7 +193,7 @@ export function TenantSummary({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* Tenant Info */}
         <div>
           <label className="text-sm font-medium text-slate-600">
@@ -226,7 +227,7 @@ export function TenantSummary({
               className="mt-1"
             />
           ) : (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
               <p className="text-lg font-semibold text-slate-900">
                 {tenancy.tenant.phone}
               </p>
@@ -235,11 +236,11 @@ export function TenantSummary({
                   href={generateWhatsAppLink(tenancy.tenant.phone)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors w-full sm:w-auto"
                   title="Contact tenant on WhatsApp"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Contact
+                  Contact WhatsApp
                 </a>
               )}
             </div>

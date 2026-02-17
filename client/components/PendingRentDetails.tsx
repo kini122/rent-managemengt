@@ -111,8 +111,8 @@ export function PendingRentDetails({
       : "";
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg border border-slate-200 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-red-600" />
           <h3 className="text-lg font-bold text-slate-900">
@@ -124,7 +124,7 @@ export function PendingRentDetails({
             href={whatsAppLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors w-full sm:w-auto"
             title="Notify tenant about pending rent"
           >
             <MessageCircle className="w-4 h-4" />
@@ -133,7 +133,7 @@ export function PendingRentDetails({
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -215,6 +215,64 @@ export function PendingRentDetails({
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      {/* Mobile view */}
+      <div className="md:hidden space-y-4">
+        {pendingAndPartialPayments.map((payment) => {
+          let outstandingAmount = payment.rent_amount;
+          if (payment.payment_status === "partial" && payment.remarks) {
+            const match = payment.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+            if (match) {
+              outstandingAmount = parseInt(match[1].replace(/,/g, ""), 10);
+            }
+          }
+
+          return (
+            <div
+              key={payment.rent_id}
+              className="p-4 bg-slate-50 rounded-lg border border-slate-200"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <p className="font-bold text-slate-900">
+                  {new Date(payment.rent_month).toLocaleDateString("en-GB", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+                <span
+                  className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                    payment.payment_status === "pending"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {payment.payment_status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-slate-500">Rent Amount</p>
+                  <p className="font-medium text-slate-900">
+                    ₹{payment.rent_amount.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-500">Outstanding</p>
+                  <p className="font-bold text-red-600">
+                    ₹{outstandingAmount.toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div className="p-4 bg-red-50 rounded-lg border border-red-100 mt-2">
+          <div className="flex justify-between items-center font-bold text-red-700">
+            <span>Total Outstanding</span>
+            <span>₹{totalAmount.toLocaleString("en-IN")}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

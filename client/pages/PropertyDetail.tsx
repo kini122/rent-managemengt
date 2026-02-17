@@ -95,19 +95,12 @@ export default function PropertyDetail() {
           <TenantSummary
             property={property}
             tenancy={tenancy}
+            onEdit={refetch}
             onCreateTenancy={() => setShowTenancyModal(true)}
             onTenancyEnded={() => {
               refetch();
               toast.success("Tenancy has been ended");
             }}
-          />
-
-          {/* Pending & Partial Rent Details */}
-          <PendingRentDetails
-            payments={rentPayments}
-            tenantName={tenancy?.tenant.name}
-            tenantPhone={tenancy?.tenant.phone}
-            propertyAddress={property.address}
           />
 
           {/* Tenancy Documents */}
@@ -125,6 +118,14 @@ export default function PropertyDetail() {
               isEditable={true}
             />
           </div>
+
+          {/* Pending & Partial Rent Details - MOVED TO BOTTOM */}
+          <PendingRentDetails
+            payments={rentPayments}
+            tenantName={tenancy?.tenant.name}
+            tenantPhone={tenancy?.tenant.phone}
+            propertyAddress={property.address}
+          />
         </div>
 
         {/* Create Tenancy Modal */}
