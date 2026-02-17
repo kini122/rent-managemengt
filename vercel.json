@@ -1,9 +1,13 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "pnpm install",
   "framework": "vite",
-  "outputDirectory": "dist",
+  "outputDirectory": "dist/spa",
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
