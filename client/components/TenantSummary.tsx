@@ -192,22 +192,36 @@ export function TenantSummary({
       XLSX.utils.book_append_sheet(wb, wsSummary, "Overview");
 
       // --- SHEET 2: RENT PAYMENT HISTORY ---
-      const historyHeaders = [["Rent ID", "Month", "Amount", "Status", "Paid Date", "Remarks", "Record Created"]];
-      const historyRows = (rentPayments || []).map((p) => [
-        p.rent_id,
-        p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
-        p.rent_amount,
-        p.payment_status.toUpperCase(),
-        p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
-        p.remarks || "-",
-        p.created_at ? new Date(p.created_at).toLocaleString("en-GB") : "-"
-      ]);
+      const historyHeaders = [["Month", "Total Rent", "Status", "Pending Amount", "Paid Date", "Notes / Remarks"]];
+      const historyRows = (rentPayments || []).map((p) => {
+        let pendingAmount = 0;
+        if (p.payment_status === "pending") {
+          pendingAmount = p.rent_amount;
+        } else if (p.payment_status === "partial" && p.remarks) {
+          const match = p.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+          if (match) {
+            pendingAmount = parseInt(match[1].replace(/,/g, ""), 10);
+          } else {
+            // Fallback if regex fails but status is partial
+            pendingAmount = p.rent_amount;
+          }
+        }
+
+        return [
+          p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
+          `₹${p.rent_amount.toLocaleString("en-IN")}`,
+          p.payment_status.toUpperCase(),
+          pendingAmount > 0 ? `₹${pendingAmount.toLocaleString("en-IN")}` : "-",
+          p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
+          p.remarks || "-"
+        ];
+      });
 
       const wsHistory = XLSX.utils.aoa_to_sheet([...historyHeaders, ...historyRows]);
       XLSX.utils.book_append_sheet(wb, wsHistory, "Rent History");
 
       // --- SHEET 3: PENDING & PARTIAL DUES ---
-      const pendingHeaders = [["Month", "Rent Amount", "Amount Owed", "Status", "Remarks"]];
+      const pendingHeaders = [["Month", "Total Rent Amount", "Pending Balance", "Payment Status", "Details / Notes"]];
       const pendingRows = pendingAndPartial.map((p) => {
         let outstandingAmount = p.rent_amount;
         if (p.payment_status === "partial" && p.remarks) {
@@ -217,8 +231,8 @@ export function TenantSummary({
 
         return [
           p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
-          p.rent_amount,
-          outstandingAmount,
+          `₹${p.rent_amount.toLocaleString("en-IN")}`,
+          `₹${outstandingAmount.toLocaleString("en-IN")}`,
           p.payment_status.toUpperCase(),
           p.remarks || "-"
         ];
