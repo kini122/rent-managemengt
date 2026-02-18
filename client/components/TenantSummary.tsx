@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Property, Tenancy, Tenant } from "@/types/index";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -46,6 +46,20 @@ export function TenantSummary({
     advanceAmount: tenancy?.advance_amount.toString() || "",
   });
 
+  // Sync editData with tenancy prop changes
+  useEffect(() => {
+    if (tenancy && !isEditing) {
+      setEditData({
+        tenantName: tenancy.tenant.name || "",
+        phone: tenancy.tenant.phone || "",
+        startDate: tenancy.start_date || "",
+        status: tenancy.status || "active",
+        monthlyRent: tenancy.monthly_rent.toString() || "",
+        advanceAmount: tenancy.advance_amount.toString() || "",
+      });
+    }
+  }, [tenancy, isEditing]);
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
@@ -78,7 +92,7 @@ export function TenantSummary({
 
       toast.success("Tenancy details updated successfully");
       setIsEditing(false);
-      onEdit?.();
+      await onEdit?.();
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to save changes",

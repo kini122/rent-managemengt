@@ -91,6 +91,16 @@ export async function createTenancy(
 }
 
 export async function updateTenancy(id: number, data: Partial<Tenancy>) {
+  // 1. Get current tenancy to check if critical fields are changing
+  const { data: current, error: fetchError } = await supabase
+    .from("tenancies")
+    .select("start_date, monthly_rent")
+    .eq("tenancy_id", id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // 2. Perform the update
   const { data: result, error } = await supabase
     .from("tenancies")
     .update(data)
@@ -99,6 +109,19 @@ export async function updateTenancy(id: number, data: Partial<Tenancy>) {
     .single();
 
   if (error) throw error;
+
+  // 3. If start_date or monthly_rent changed, sync rent payments
+  const hasStartDateChanged =
+    data.start_date && data.start_date !== current.start_date;
+  const hasRentChanged =
+    data.monthly_rent &&
+    parseFloat(data.monthly_rent.toString()) !==
+      parseFloat(current.monthly_rent.toString());
+
+  if (hasStartDateChanged || hasRentChanged) {
+    await syncRentPayments(id, result.start_date, result.monthly_rent);
+  }
+
   return result;
 }
 
@@ -194,6 +217,86 @@ async function autoGenerateRentPayments(
 
     if (error) throw error;
   }
+}
+
+// Synchronize rent payments when tenancy details change
+async function syncRentPayments(
+  tenancyId: number,
+  startDate: string,
+  monthlyRent: number,
+) {
+  // 1. Delete all existing 'pending' payments
+  // We keep 'paid' or 'partial' as they represent real transactions
+  const { error: deleteError } = await supabase
+    .from("rent_payments")
+    .delete()
+    .eq("tenancy_id", tenancyId)
+    .eq("payment_status", "pending");
+
+  if (deleteError) throw deleteError;
+
+  // 2. Fetch existing 'paid' or 'partial' months to avoid duplicates
+  const { data: existing, error: fetchError } = await supabase
+    .from("rent_payments")
+    .select("rent_month")
+    .eq("tenancy_id", tenancyId)
+    .neq("payment_status", "pending");
+
+  if (fetchError) throw fetchError;
+
+  const existingMonths = new Set((existing || []).map((p) => p.rent_month));
+
+  // 3. Generate missing pending payments based on new start date
+  const start = new Date(startDate);
+  const now = new Date();
+  const startDay = start.getDate();
+
+  const newPayments: Omit<RentPayment, "rent_id" | "created_at">[] = [];
+
+  let currentMonth = new Date(
+    start.getFullYear(),
+    start.getMonth() + 1,
+    startDay,
+  );
+
+  while (currentMonth <= now) {
+    const dueDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      startDay,
+    );
+
+    if (dueDate <= now) {
+      const rentMonth = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+      const rentMonthStr = rentMonth.toISOString().split("T")[0];
+
+      // Only add if we don't already have a paid/partial record for this month
+      if (!existingMonths.has(rentMonthStr)) {
+        newPayments.push({
+          tenancy_id: tenancyId,
+          rent_month: rentMonthStr,
+          rent_amount: monthlyRent,
+          payment_status: "pending",
+          paid_date: null,
+          remarks: "",
+        });
+      }
+    }
+
+    currentMonth.setMonth(currentMonth.getMonth() + 1);
+  }
+
+  if (newPayments.length > 0) {
+    const { error: insertError } = await supabase
+      .from("rent_payments")
+      .insert(newPayments);
+
+    if (insertError) throw insertError;
+  }
+
+  // 4. Update 'rent_amount' for existing partial payments if rent changed?
+  // (Optional - but usually changing rent doesn't affect past agreements retroactively unless specified)
+  // For now, we only update pending rent amounts as they are regenerated.
 }
 
 // Dashboard queries
