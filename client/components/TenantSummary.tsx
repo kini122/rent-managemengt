@@ -142,78 +142,102 @@ export function TenantSummary({
     if (!tenancy) return;
 
     try {
-      // 1. Prepare Tenancy Info Sheet
-      const tenancyData = [
-        { Field: "Property Address", Value: property.address },
-        { Field: "Property Details", Value: property.details },
-        { Field: "Tenant Name", Value: tenancy.tenant.name },
-        { Field: "Tenant Phone", Value: tenancy.tenant.phone },
-        { Field: "Tenant ID Proof", Value: tenancy.tenant.id_proof || "-" },
-        { Field: "Tenant Notes", Value: tenancy.tenant.notes || "-" },
-        { Field: "Start Date", Value: new Date(tenancy.start_date).toLocaleDateString("en-GB") },
-        { Field: "End Date", Value: tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString("en-GB") : "-" },
-        { Field: "Status", Value: tenancy.status },
-        { Field: "Monthly Rent", Value: `₹${tenancy.monthly_rent.toLocaleString("en-IN")}` },
-        { Field: "Advance Amount", Value: `₹${tenancy.advance_amount.toLocaleString("en-IN")}` },
-        { Field: "Tenancy ID", Value: tenancy.tenancy_id },
-        { Field: "Property ID", Value: property.property_id },
-        { Field: "Tenancy Created", Value: new Date(tenancy.created_at).toLocaleString("en-GB") },
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+
+      // --- SHEET 1: SUMMARY & DETAILS (All in one view) ---
+      const summaryRows = [
+        ["TENANCY SUMMARY REPORT"],
+        ["Generated on:", new Date().toLocaleString("en-GB")],
+        [],
+        ["PROPERTY INFORMATION"],
+        ["Address:", property.address],
+        ["Details:", property.details || "-"],
+        [],
+        ["TENANT INFORMATION"],
+        ["Name:", tenancy.tenant.name],
+        ["Phone:", tenancy.tenant.phone],
+        ["ID Proof:", tenancy.tenant.id_proof || "-"],
+        ["Notes:", tenancy.tenant.notes || "-"],
+        [],
+        ["TENANCY TERMS"],
+        ["Start Date:", new Date(tenancy.start_date).toLocaleDateString("en-GB")],
+        ["End Date:", tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString("en-GB") : "Active"],
+        ["Monthly Rent:", `₹${tenancy.monthly_rent.toLocaleString("en-IN")}`],
+        ["Advance Amount:", `₹${tenancy.advance_amount.toLocaleString("en-IN")}`],
+        ["Status:", tenancy.status.toUpperCase()],
+        [],
+        ["FINANCIAL OVERVIEW"],
       ];
 
-      // 2. Prepare Detailed Rent History Sheet
-      console.log("Generating report with payments:", rentPayments);
-      const historyData = (rentPayments || []).map((p) => ({
-        "Rent ID": p.rent_id,
-        Month: p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
-        Amount: p.rent_amount,
-        Status: (p.payment_status || "pending").toUpperCase(),
-        "Paid Date": p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
-        Remarks: p.remarks || "-",
-        "Created At": p.created_at ? new Date(p.created_at).toLocaleString("en-GB") : "-",
-      }));
+      // Calculate totals
+      const totalPaid = (rentPayments || [])
+        .filter(p => p.payment_status === "paid")
+        .reduce((sum, p) => sum + p.rent_amount, 0);
 
-      // 3. Prepare Pending & Partial Details Sheet
       const pendingAndPartial = (rentPayments || []).filter(p => p.payment_status !== "paid");
-      const pendingData = pendingAndPartial.map((p) => {
+      const totalPending = pendingAndPartial.reduce((sum, p) => {
+        let amt = p.rent_amount;
+        if (p.payment_status === "partial" && p.remarks) {
+          const match = p.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+          if (match) amt = parseInt(match[1].replace(/,/g, ""), 10);
+        }
+        return sum + amt;
+      }, 0);
+
+      summaryRows.push(["Total Rent Paid:", `₹${totalPaid.toLocaleString("en-IN")}`]);
+      summaryRows.push(["Outstanding Balance:", `₹${totalPending.toLocaleString("en-IN")}`]);
+
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Overview");
+
+      // --- SHEET 2: RENT PAYMENT HISTORY ---
+      const historyHeaders = [["Rent ID", "Month", "Amount", "Status", "Paid Date", "Remarks", "Record Created"]];
+      const historyRows = (rentPayments || []).map((p) => [
+        p.rent_id,
+        p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
+        p.rent_amount,
+        p.payment_status.toUpperCase(),
+        p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
+        p.remarks || "-",
+        p.created_at ? new Date(p.created_at).toLocaleString("en-GB") : "-"
+      ]);
+
+      const wsHistory = XLSX.utils.aoa_to_sheet([...historyHeaders, ...historyRows]);
+      XLSX.utils.book_append_sheet(wb, wsHistory, "Rent History");
+
+      // --- SHEET 3: PENDING & PARTIAL DUES ---
+      const pendingHeaders = [["Month", "Rent Amount", "Amount Owed", "Status", "Remarks"]];
+      const pendingRows = pendingAndPartial.map((p) => {
         let outstandingAmount = p.rent_amount;
         if (p.payment_status === "partial" && p.remarks) {
           const match = p.remarks.match(/Remaining:\s*₹?([\d,]+)/);
-          if (match) {
-            outstandingAmount = parseInt(match[1].replace(/,/g, ""), 10);
-          }
+          if (match) outstandingAmount = parseInt(match[1].replace(/,/g, ""), 10);
         }
 
-        return {
-          Month: p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
-          "Total Rent": p.rent_amount,
-          "Remaining Balance": outstandingAmount,
-          Status: (p.payment_status || "pending").toUpperCase(),
-          Remarks: p.remarks || "-",
-        };
+        return [
+          p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
+          p.rent_amount,
+          outstandingAmount,
+          p.payment_status.toUpperCase(),
+          p.remarks || "-"
+        ];
       });
 
-      // Create workbook and add sheets
-      const wb = XLSX.utils.book_new();
+      const wsPending = XLSX.utils.aoa_to_sheet([...pendingHeaders, ...pendingRows]);
+      XLSX.utils.book_append_sheet(wb, wsPending, "Pending Dues");
 
-      const wsTenancy = XLSX.utils.json_to_sheet(tenancyData);
-      XLSX.utils.book_append_sheet(wb, wsTenancy, "Tenancy Profile");
-
-      if (historyData.length > 0) {
-        const wsHistory = XLSX.utils.json_to_sheet(historyData);
-        XLSX.utils.book_append_sheet(wb, wsHistory, "Rent Payment History");
-      }
-
-      if (pendingData.length > 0) {
-        const wsPending = XLSX.utils.json_to_sheet(pendingData);
-        XLSX.utils.book_append_sheet(wb, wsPending, "Pending & Partial Dues");
-      }
+      // Set column widths for better readability
+      wsSummary["!cols"] = [{ wch: 25 }, { wch: 50 }];
+      wsHistory["!cols"] = [{ wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 20 }];
+      wsPending["!cols"] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }];
 
       // Generate filename
-      const fileName = `${property.address.replace(/[/\\?%*:|"<>]/g, "-")}_Full_Report.xlsx`;
+      const fileName = `${property.address.replace(/[/\\?%*:|"<>]/g, "-")}_Report.xlsx`;
 
       // Export file
       XLSX.writeFile(wb, fileName);
-      toast.success("Comprehensive report generated successfully");
+      toast.success("Redesigned report generated successfully");
     } catch (err) {
       console.error("Report generation error:", err);
       toast.error("Failed to generate report");
