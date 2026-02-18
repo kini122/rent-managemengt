@@ -145,9 +145,9 @@ export function TenantSummary({
       // Create workbook
       const wb = XLSX.utils.book_new();
 
-      // --- SHEET 1: SUMMARY & DETAILS (All in one view) ---
-      const summaryRows = [
-        ["TENANCY SUMMARY REPORT"],
+      // --- SHEET 1: OVERVIEW & FULL HISTORY (Consolidated) ---
+      const consolidatedRows = [
+        ["RENTAL PROPERTY FULL REPORT"],
         ["Generated on:", new Date().toLocaleString("en-GB")],
         [],
         ["PROPERTY INFORMATION"],
@@ -167,7 +167,7 @@ export function TenantSummary({
         ["Advance Amount:", `₹${tenancy.advance_amount.toLocaleString("en-IN")}`],
         ["Status:", tenancy.status.toUpperCase()],
         [],
-        ["FINANCIAL OVERVIEW"],
+        ["SUMMARY STATISTICS"],
       ];
 
       // Calculate totals
@@ -176,7 +176,8 @@ export function TenantSummary({
         .reduce((sum, p) => sum + p.rent_amount, 0);
 
       const pendingAndPartial = (rentPayments || []).filter(p => p.payment_status !== "paid");
-      const totalPending = pendingAndPartial.reduce((sum, p) => {
+      const totalPending = (rentPayments || []).reduce((sum, p) => {
+        if (p.payment_status === "paid") return sum;
         let amt = p.rent_amount;
         if (p.payment_status === "partial" && p.remarks) {
           const match = p.remarks.match(/Remaining:\s*₹?([\d,]+)/);
@@ -185,15 +186,18 @@ export function TenantSummary({
         return sum + amt;
       }, 0);
 
-      summaryRows.push(["Total Rent Paid:", `₹${totalPaid.toLocaleString("en-IN")}`]);
-      summaryRows.push(["Outstanding Balance:", `₹${totalPending.toLocaleString("en-IN")}`]);
+      consolidatedRows.push(["Total Rent Paid:", `₹${totalPaid.toLocaleString("en-IN")}`]);
+      consolidatedRows.push(["Total Outstanding Balance:", `₹${totalPending.toLocaleString("en-IN")}`]);
+      consolidatedRows.push([]);
+      consolidatedRows.push(["RENT PAYMENT HISTORY (ALL HISTORICAL RECORDS)"]);
+      consolidatedRows.push(["Month", "Total Rent", "Status", "Pending Amount", "Paid Date", "Notes / Remarks"]);
 
-      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Overview");
+      // Sort rentPayments by month (newest first)
+      const sortedPayments = [...(rentPayments || [])].sort((a, b) =>
+        new Date(b.rent_month).getTime() - new Date(a.rent_month).getTime()
+      );
 
-      // --- SHEET 2: RENT PAYMENT HISTORY ---
-      const historyHeaders = [["Month", "Total Rent", "Status", "Pending Amount", "Paid Date", "Notes / Remarks"]];
-      const historyRows = (rentPayments || []).map((p) => {
+      sortedPayments.forEach((p) => {
         let pendingAmount = 0;
         if (p.payment_status === "pending") {
           pendingAmount = p.rent_amount;
@@ -202,7 +206,34 @@ export function TenantSummary({
           if (match) {
             pendingAmount = parseInt(match[1].replace(/,/g, ""), 10);
           } else {
-            // Fallback if regex fails but status is partial
+            pendingAmount = p.rent_amount;
+          }
+        }
+
+        consolidatedRows.push([
+          p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
+          `₹${p.rent_amount.toLocaleString("en-IN")}`,
+          p.payment_status.toUpperCase(),
+          pendingAmount > 0 ? `₹${pendingAmount.toLocaleString("en-IN")}` : "-",
+          p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
+          p.remarks || "-"
+        ]);
+      });
+
+      const wsOverview = XLSX.utils.aoa_to_sheet(consolidatedRows);
+      XLSX.utils.book_append_sheet(wb, wsOverview, "Full Report Overview");
+
+      // --- SHEET 2: RENT PAYMENT HISTORY (Stand-alone for reference) ---
+      const historyHeaders = [["Month", "Total Rent", "Status", "Pending Amount", "Paid Date", "Notes / Remarks"]];
+      const historyRows = sortedPayments.map((p) => {
+        let pendingAmount = 0;
+        if (p.payment_status === "pending") {
+          pendingAmount = p.rent_amount;
+        } else if (p.payment_status === "partial" && p.remarks) {
+          const match = p.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+          if (match) {
+            pendingAmount = parseInt(match[1].replace(/,/g, ""), 10);
+          } else {
             pendingAmount = p.rent_amount;
           }
         }
@@ -218,7 +249,7 @@ export function TenantSummary({
       });
 
       const wsHistory = XLSX.utils.aoa_to_sheet([...historyHeaders, ...historyRows]);
-      XLSX.utils.book_append_sheet(wb, wsHistory, "Rent History");
+      XLSX.utils.book_append_sheet(wb, wsHistory, "Rent Payment History");
 
       // --- SHEET 3: PENDING & PARTIAL DUES ---
       const pendingHeaders = [["Month", "Total Rent Amount", "Pending Balance", "Payment Status", "Details / Notes"]];
@@ -239,19 +270,19 @@ export function TenantSummary({
       });
 
       const wsPending = XLSX.utils.aoa_to_sheet([...pendingHeaders, ...pendingRows]);
-      XLSX.utils.book_append_sheet(wb, wsPending, "Pending Dues");
+      XLSX.utils.book_append_sheet(wb, wsPending, "Pending & Partial Dues");
 
       // Set column widths for better readability
-      wsSummary["!cols"] = [{ wch: 25 }, { wch: 50 }];
-      wsHistory["!cols"] = [{ wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 20 }];
-      wsPending["!cols"] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 }];
+      wsOverview["!cols"] = [{ wch: 25 }, { wch: 50 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 40 }];
+      wsHistory["!cols"] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 40 }];
+      wsPending["!cols"] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 40 }];
 
       // Generate filename
       const fileName = `${property.address.replace(/[/\\?%*:|"<>]/g, "-")}_Report.xlsx`;
 
       // Export file
       XLSX.writeFile(wb, fileName);
-      toast.success("Redesigned report generated successfully");
+      toast.success("Final redesigned report generated");
     } catch (err) {
       console.error("Report generation error:", err);
       toast.error("Failed to generate report");
