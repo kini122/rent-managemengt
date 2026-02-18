@@ -337,15 +337,17 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title="All Properties">
           <div className="space-y-2">
             {propertiesData.map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50">
-                <div>
-                  <p className="font-medium text-slate-900 truncate">{p.address}</p>
-                  <p className="text-xs text-slate-500">{p.details ? p.details.substring(0, 40) : 'No details'}</p>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50 mb-2">
+                  <div>
+                    <p className="font-medium text-slate-900 truncate">{p.address}</p>
+                    <p className="text-xs text-slate-500">{p.details ? p.details.substring(0, 40) : 'No details'}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${p.occupied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {p.occupied ? 'Occupied' : 'Vacant'}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${p.occupied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                  {p.occupied ? 'Occupied' : 'Vacant'}
-                </span>
-              </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -356,10 +358,12 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`Occupied Properties (${metrics.occupiedProperties})`}>
           <div className="space-y-2">
             {propertiesData.filter(p => p.occupied).map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{p.address}</p>
-                <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
-              </div>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{p.address}</p>
+                  <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -370,10 +374,12 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`Vacant Properties (${metrics.vacantProperties})`}>
           <div className="space-y-2">
             {propertiesData.filter(p => !p.occupied).map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{p.address}</p>
-                <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
-              </div>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{p.address}</p>
+                  <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -384,10 +390,12 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`All Tenants (${metrics.totalTenants})`}>
           <div className="space-y-2">
             {pendingRents.map(row => (
-              <div key={row.tenant.tenant_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{row.tenant.name}</p>
-                <p className="text-xs text-slate-500 mt-1">{row.property.address}</p>
-              </div>
+              <Link key={row.tenant.tenant_id} to={`/property/${row.property.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{row.tenant.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">{row.property.address}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>

@@ -79,7 +79,7 @@ export default function AdminProperties() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete property';
       // Check for foreign key constraint errors
       if (errorMsg.includes('violates foreign key') || errorMsg.includes('constraint')) {
-        toast.error('Cannot delete property. It has active tenancies or other dependencies. End all tenancies first.');
+        toast.error('Cannot delete property due to database constraints. Ensure you have run the latest SQL setup with ON DELETE CASCADE.');
       } else {
         toast.error(errorMsg);
       }
