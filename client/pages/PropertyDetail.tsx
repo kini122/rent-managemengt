@@ -103,9 +103,6 @@ export default function PropertyDetail() {
             }}
           />
 
-          {/* Tenancy Documents */}
-          {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} />}
-
           {/* Bottom Half: Rent Payments Table */}
           <div>
             <h2 className="text-xl font-bold text-slate-900 mb-4">
@@ -119,13 +116,16 @@ export default function PropertyDetail() {
             />
           </div>
 
-          {/* Pending & Partial Rent Details - MOVED TO BOTTOM */}
+          {/* Pending & Partial Rent Details */}
           <PendingRentDetails
             payments={rentPayments}
             tenantName={tenancy?.tenant.name}
             tenantPhone={tenancy?.tenant.phone}
             propertyAddress={property.address}
           />
+
+          {/* Tenancy Documents - MOVED TO LAST */}
+          {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} />}
         </div>
 
         {/* Create Tenancy Modal */}
