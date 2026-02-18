@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X } from 'lucide-react';
+import { Loader2, Settings, X, BookOpen } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
 
 interface PendingRentRow {
@@ -182,14 +182,21 @@ export default function AdminDashboard() {
         )}
 
         {/* Quick Actions */}
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-4">Management</h2>
-          <Link to="/admin/properties">
-            <Button className="gap-2">
-              <Settings className="w-4 h-4" />
-              Manage Properties
-            </Button>
-          </Link>
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-4">
+            <Link to="/admin/properties">
+              <Button className="gap-2">
+                <Settings className="w-4 h-4" />
+                Manage Properties
+              </Button>
+            </Link>
+            <Link to="/guideline">
+              <Button variant="outline" className="gap-2">
+                <BookOpen className="w-4 h-4" />
+                App Guidelines
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Metrics Grid - Clickable */}

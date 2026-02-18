@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, ExternalLink, ArrowLeft } from 'lucide-react';
 
 export default function Setup() {
   const [copied, setCopied] = useState(false);
@@ -48,6 +49,14 @@ ALTER TABLE tenancy_documents DISABLE ROW LEVEL SECURITY;`;
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Link to="/guideline">
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Guidelines
+            </Button>
+          </Link>
+        </div>
         <div className="bg-white rounded-lg border border-slate-200 p-8">
           <div className="flex items-center gap-3 mb-6">
             <AlertCircle className="w-6 h-6 text-amber-600" />

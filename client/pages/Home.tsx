@@ -4,7 +4,7 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { isConfigured } from '@/lib/supabaseClient';
 import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, AlertCircle } from 'lucide-react';
+import { Loader2, Settings, AlertCircle, BookOpen } from 'lucide-react';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
@@ -19,12 +19,20 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-slate-900">Rent Management System</h1>
               <p className="text-slate-600 mt-1">Manage your properties and track rent payments</p>
             </div>
-            <Link to="/admin">
-              <Button className="gap-2">
-                <Settings className="w-4 h-4" />
-                Admin Dashboard
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/guideline">
+                <Button variant="ghost" className="gap-2 text-slate-600">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Guidelines</span>
+                </Button>
+              </Link>
+              <Link to="/admin">
+                <Button className="gap-2">
+                  <Settings className="w-4 h-4" />
+                  Admin Dashboard
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -74,9 +82,9 @@ export default function Home() {
                 </p>
                 {isRLSError(error) && (
                   <div className="mt-4 flex gap-2">
-                    <Link to="/rls-fix">
+                    <Link to="/setup">
                       <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                        View RLS Fix
+                        View Database Setup
                       </Button>
                     </Link>
                     <Link to="/debug">
