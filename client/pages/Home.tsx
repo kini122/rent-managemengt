@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
-import { isConfigured } from '@/lib/supabaseClient';
 import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
 import { Loader2, Settings, AlertCircle, BookOpen } from 'lucide-react';
@@ -39,21 +38,6 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!isConfigured && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-700 font-medium mb-3">
-              ⚠️ Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.
-            </p>
-            <div className="flex gap-2">
-              <Link to="/storage-migration">
-                <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
-                  Setup Storage
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className={`mb-6 p-4 rounded-lg border ${
             isRLSError(error)
@@ -77,11 +61,9 @@ export default function Home() {
                 </p>
                 {isRLSError(error) && (
                   <div className="mt-4 flex gap-2">
-                    <Link to="/setup">
-                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                        View Database Setup
-                      </Button>
-                    </Link>
+                    <p className="text-sm text-red-700 italic">
+                      Please contact your administrator to configure database security.
+                    </p>
                   </div>
                 )}
               </div>

@@ -11,49 +11,49 @@ import {
   ShieldCheck,
   Smartphone,
   CheckCircle2,
-  Info
+  FileText
 } from "lucide-react";
 
 export default function Guideline() {
-  const sections = [
+  const steps = [
     {
-      title: "Property Management",
+      title: "Step 1: Add Your Properties",
       icon: <Home className="w-6 h-6 text-blue-600" />,
-      description: "Organize and track your real estate portfolio.",
-      items: [
-        "View all properties in a grid on the Home page.",
-        "Add, Edit, or Delete properties from the Admin Properties section.",
-        "Each property shows its current occupancy status and pending rent count."
+      description: "Start by listing the properties you manage.",
+      details: [
+        "Go to the Admin section to add new property addresses.",
+        "Include details like apartment numbers or specific building names.",
+        "You can edit or deactivate properties at any time."
       ]
     },
     {
-      title: "Tenants & Agreements",
+      title: "Step 2: Assign Tenants",
       icon: <Users className="w-6 h-6 text-emerald-600" />,
-      description: "Manage relationships and rental contracts.",
-      items: [
-        "Create 'Tenancies' to link a tenant to a specific property.",
-        "Track move-in dates, monthly rent, and advance security deposits.",
-        "End a tenancy when a tenant moves out to mark the property as vacant."
+      description: "Link a tenant to their new home.",
+      details: [
+        "Choose a property and enter the tenant's name and contact information.",
+        "Set the monthly rent amount and the lease start date.",
+        "Record the security deposit (advance amount) for your records."
       ]
     },
     {
-      title: "Rent Tracking",
+      title: "Step 3: Track Rent Collections",
       icon: <CreditCard className="w-6 h-6 text-amber-600" />,
-      description: "Never miss a payment with automated tracking.",
-      items: [
-        "Rent records are automatically generated based on the tenancy start date.",
-        "Mark payments as 'Paid', 'Pending', or 'Partial' directly from the property details.",
-        "Use the 'Pending Rent' dashboard to see exactly who owes what across all properties."
+      description: "Keep track of payments month by month.",
+      details: [
+        "The system automatically creates a rent record for every month.",
+        "When a tenant pays, simply mark the record as 'Paid'.",
+        "Record partial payments or add notes for late collections."
       ]
     },
     {
-      title: "Dashboard & Metrics",
+      title: "Step 4: Monitor Performance",
       icon: <BarChart3 className="w-6 h-6 text-purple-600" />,
-      description: "Get a bird's-eye view of your business performance.",
-      items: [
-        "Monitor occupancy rates and total pending collections in real-time.",
-        "Quickly identify vacant properties that need new tenants.",
-        "Access deep-dive reports by clicking on any metric card."
+      description: "Review your rental business at a glance.",
+      details: [
+        "Use the Dashboard to see total properties and occupancy rates.",
+        "Quickly identify which tenants have overdue payments.",
+        "Keep track of total earnings and pending collections."
       ]
     }
   ];
@@ -66,10 +66,10 @@ export default function Guideline() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BookOpen className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-slate-900">App Guidelines</h1>
+              <h1 className="text-2xl font-bold text-slate-900">How to Use the App</h1>
             </div>
             <Link to="/">
-              <Button variant="outline">Go to Dashboard</Button>
+              <Button variant="outline">Back to Dashboard</Button>
             </Link>
           </div>
         </div>
@@ -78,40 +78,40 @@ export default function Guideline() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Welcome Section */}
         <div className="bg-blue-600 rounded-2xl p-8 mb-10 text-white shadow-xl shadow-blue-100">
-          <h2 className="text-3xl font-bold mb-4">Welcome to Rent Management System</h2>
+          <h2 className="text-3xl font-bold mb-4">Master Your Property Management</h2>
           <p className="text-blue-100 text-lg max-w-2xl leading-relaxed">
-            This application is designed to simplify the complexities of property management, 
-            tenant tracking, and rent collection for landlords and property managers.
+            Welcome! This guide will help you get started with managing your properties, 
+            tracking tenants, and collecting rent efficiently.
           </p>
           <div className="flex flex-wrap gap-4 mt-8">
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-sm font-medium">
-              <ShieldCheck className="w-4 h-4" /> Secure with Supabase
+              <CheckCircle2 className="w-4 h-4" /> Easy to Use
             </div>
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-sm font-medium">
-              <Smartphone className="w-4 h-4" /> Mobile Optimized
+              <Smartphone className="w-4 h-4" /> Accessible Anywhere
             </div>
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-sm font-medium">
-              <CheckCircle2 className="w-4 h-4" /> Real-time Updates
+              <ShieldCheck className="w-4 h-4" /> Data Secured
             </div>
           </div>
         </div>
 
-        {/* Feature Grid */}
+        {/* Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          {sections.map((section, idx) => (
+          {steps.map((step, idx) => (
             <div key={idx} className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-slate-50 rounded-lg">
-                  {section.icon}
+                  {step.icon}
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">{section.title}</h3>
+                <h3 className="text-xl font-bold text-slate-900">{step.title}</h3>
               </div>
-              <p className="text-slate-600 mb-6">{section.description}</p>
+              <p className="text-slate-600 mb-6 font-medium">{step.description}</p>
               <ul className="space-y-3">
-                {section.items.map((item, i) => (
+                {step.details.map((detail, i) => (
                   <li key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed">
                     <div className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    {item}
+                    {detail}
                   </li>
                 ))}
               </ul>
@@ -119,62 +119,51 @@ export default function Guideline() {
           ))}
         </div>
 
-        {/* How it Works / Workflow */}
+        {/* Quick Tips Section */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 mb-12">
           <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-2">
             <Settings className="w-6 h-6 text-slate-500" />
-            Standard Workflow
+            Helpful Tips
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <div className="relative">
-              <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold mb-4">1</div>
-              <h4 className="font-bold text-slate-900 mb-2">Add Property</h4>
-              <p className="text-sm text-slate-600">Enter your property address and description in the Admin section.</p>
-              <ArrowRight className="hidden sm:block absolute top-5 -right-4 w-5 h-5 text-slate-300" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center">
+                  <FileText className="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">Document Storage</h4>
+                <p className="text-sm text-slate-600">You can upload rental agreements and tenant IDs directly to each property for easy access.</p>
+              </div>
             </div>
-            <div className="relative">
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold mb-4">2</div>
-              <h4 className="font-bold text-slate-900 mb-2">Create Tenancy</h4>
-              <p className="text-sm text-slate-600">Assign a tenant to the property and define the rent and start date.</p>
-              <ArrowRight className="hidden sm:block absolute top-5 -right-4 w-5 h-5 text-slate-300" />
-            </div>
-            <div>
-              <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold mb-4">3</div>
-              <h4 className="font-bold text-slate-900 mb-2">Collect Rent</h4>
-              <p className="text-sm text-slate-600">Monitor the generated rent records and mark them as paid when received.</p>
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">Stay Updated</h4>
+                <p className="text-sm text-slate-600">The home page summary automatically updates as you mark rent as paid or add new properties.</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Tech Note */}
-        <div className="bg-slate-900 rounded-xl p-8 text-slate-300">
-          <div className="flex items-center gap-2 text-white font-bold mb-4">
-            <Info className="w-5 h-5 text-blue-400" />
-            Technical Architecture
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm leading-relaxed">
-            <div>
-              <p className="mb-4">
-                The application uses <span className="text-white font-medium">Supabase</span> for real-time database management and 
-                authentication. All your data is stored securely in a PostgreSQL database.
-              </p>
-              <p>
-                The frontend is built with <span className="text-white font-medium">React</span> and 
-                <span className="text-white font-medium">Tailwind CSS</span>, ensuring a smooth and responsive experience across 
-                mobile, tablet, and desktop devices.
-              </p>
-            </div>
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-              <h5 className="text-white font-bold mb-2">Need to Reset?</h5>
-              <p className="text-slate-400 mb-4 text-xs">
-                If you encounter database connection issues or need to reset your environment, you can use the built-in diagnostic tools.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link to="/setup">
-                  <Button size="sm" variant="outline" className="text-white border-white/20 hover:bg-white/10">Database Setup</Button>
-                </Link>
-              </div>
-            </div>
+        {/* Workflow Summary */}
+        <div className="bg-slate-900 rounded-xl p-8 text-slate-300 text-center">
+          <h3 className="text-2xl font-bold text-white mb-4">Ready to manage your properties?</h3>
+          <p className="mb-8 text-slate-400 max-w-xl mx-auto">
+            Start by adding your first property and then assign a tenant to begin tracking rent payments effortlessly.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link to="/admin/properties">
+              <Button className="bg-blue-600 hover:bg-blue-700">Add a Property</Button>
+            </Link>
+            <Link to="/">
+              <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">Back to Dashboard</Button>
+            </Link>
           </div>
         </div>
       </div>

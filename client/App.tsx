@@ -11,9 +11,7 @@ import Home from "./pages/Home";
 import PropertyDetail from "./pages/PropertyDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProperties from "./pages/AdminProperties";
-import Setup from "./pages/Setup";
 import Guideline from "./pages/Guideline";
-import StorageMigration from "./pages/StorageMigration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,8 +24,6 @@ const AppContent = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/guideline" element={<Guideline />} />
-        <Route path="/setup" element={<Setup />} />
-        <Route path="/storage-migration" element={<StorageMigration />} />
         <Route path="/" element={<Home />} />
         <Route path="/property/:propertyId" element={<PropertyDetail />} />
         <Route path="/admin" element={<AdminDashboard />} />
