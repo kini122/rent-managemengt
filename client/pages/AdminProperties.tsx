@@ -76,12 +76,15 @@ export default function AdminProperties() {
       toast.success('Property deleted successfully');
       await fetchProperties();
     } catch (err) {
+      console.error('Delete error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete property';
-      // Check for foreign key constraint errors
+
       if (errorMsg.includes('violates foreign key') || errorMsg.includes('constraint')) {
-        toast.error('Cannot delete property due to database constraints. Ensure you have run the latest SQL setup with ON DELETE CASCADE.');
+        toast.error('Cannot delete property due to database constraints. The system tried to clean up dependencies but failed. Please check your database setup.');
+      } else if (errorMsg.toLowerCase().includes('row level security') || errorMsg.toLowerCase().includes('policy')) {
+        toast.error('Permission denied. Your database security (RLS) is preventing this deletion. Please ensure RLS is disabled or you have proper delete policies.');
       } else {
-        toast.error(errorMsg);
+        toast.error(`Delete failed: ${errorMsg}`);
       }
     } finally {
       setDeleting(null);

@@ -34,6 +34,27 @@ export async function updateProperty(id: number, data: Partial<Property>) {
 }
 
 export async function deleteProperty(id: number) {
+  // 1. First, delete all tenancies for this property
+  // This will cascade to rent_payments and tenancy_documents if the DB is set up correctly,
+  // but we'll do it step by step to be absolutely sure and handle cases where cascades might fail.
+
+  // Get tenancy IDs first
+  const { data: tenancies } = await supabase
+    .from("tenancies")
+    .select("tenancy_id")
+    .eq("property_id", id);
+
+  if (tenancies && tenancies.length > 0) {
+    const tenancyIds = tenancies.map(t => t.tenancy_id);
+
+    // Delete dependent records for all tenancies of this property
+    // We do this manually to avoid potential RLS or constraint issues with CASCADE
+    await supabase.from("rent_payments").delete().in("tenancy_id", tenancyIds);
+    await supabase.from("tenancy_documents").delete().in("tenancy_id", tenancyIds);
+    await supabase.from("tenancies").delete().eq("property_id", id);
+  }
+
+  // 2. Finally delete the property itself
   const { error } = await supabase
     .from("properties")
     .delete()
