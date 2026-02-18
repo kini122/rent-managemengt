@@ -7,8 +7,8 @@ import { CreateTenancyModal } from "@/components/CreateTenancyModal";
 import { PendingRentDetails } from "@/components/PendingRentDetails";
 import { TenancyDocuments } from "@/components/TenancyDocuments";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
-import { markRentAsPaid, deleteProperty } from "@/services/supabaseAdmin";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { markRentAsPaid } from "@/services/supabaseAdmin";
 import { toast } from "sonner";
 
 export default function PropertyDetail() {
@@ -19,7 +19,6 @@ export default function PropertyDetail() {
   const { property, tenancy, rentPayments, loading, error, refetch } =
     usePropertyDetail(propId);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showTenancyModal, setShowTenancyModal] = useState(false);
 
   const handleMarkRentAsPaid = async (rentId: number) => {
@@ -34,29 +33,6 @@ export default function PropertyDetail() {
       );
     } finally {
       setIsMarkingPaid(false);
-    }
-  };
-
-  const handleDeleteProperty = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${property?.address}"? This will also delete all associated tenancies, rent payments, and documents. This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setIsDeleting(true);
-      await deleteProperty(propId);
-      toast.success("Property deleted successfully");
-      navigate("/");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete property",
-      );
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -98,34 +74,17 @@ export default function PropertyDetail() {
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/")}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Properties
-              </Button>
-              <h1 className="text-3xl font-bold text-slate-900">
-                Property Details
-              </h1>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleDeleteProperty}
-              disabled={isDeleting}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 gap-2 self-start sm:self-center"
-            >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-              Delete Property
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Properties
+          </Button>
+          <h1 className="text-3xl font-bold text-slate-900">
+            Property Details
+          </h1>
         </div>
       </div>
 
