@@ -12,23 +12,24 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Rent Management System</h1>
-              <p className="text-slate-600 mt-1">Manage your properties and track rent payments</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-bold text-slate-900 truncate">Rent Management</h1>
+              <p className="hidden md:block text-slate-600 mt-1">Manage your properties and track rent payments</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 md:gap-2">
               <Link to="/guideline">
-                <Button variant="ghost" className="gap-2 text-slate-600">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600 px-2 md:px-3">
                   <BookOpen className="w-4 h-4" />
                   <span className="hidden sm:inline">Guidelines</span>
                 </Button>
               </Link>
               <Link to="/admin">
-                <Button className="gap-2">
+                <Button size="sm" className="gap-1.5 px-2 md:px-3">
                   <Settings className="w-4 h-4" />
-                  Admin Dashboard
+                  <span className="hidden sm:inline">Admin Dashboard</span>
+                  <span className="sm:hidden">Admin</span>
                 </Button>
               </Link>
             </div>
