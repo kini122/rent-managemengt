@@ -13,10 +13,12 @@ export const handleInitStorage: RequestHandler = async (req, res) => {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return res.status(400).json({
-        error: "Missing Supabase configuration",
-        message:
-          "Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables",
+      console.warn("Missing Supabase configuration for storage initialization. Skipping automated setup.");
+      return res.json({
+        success: true,
+        message: "Skipping automated storage setup. Ensure 'tenancy_documents' bucket exists manually.",
+        bucket: BUCKET_NAME,
+        warning: "SUPABASE_SERVICE_ROLE_KEY not found"
       });
     }
 
