@@ -4,8 +4,10 @@ import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X, BookOpen } from 'lucide-react';
+import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
+import { generateGlobalReport, ReportType } from '@/services/reportGenerator';
+import { toast } from 'sonner';
 
 interface PendingRentRow {
   property: Property;
@@ -31,6 +33,21 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGlobalReport = async (type: ReportType, year?: number, month?: number) => {
+    try {
+      setGeneratingReport(true);
+      await generateGlobalReport(type, year, month);
+      toast.success('Report generated successfully');
+      setReportModalOpen(false);
+    } catch (err) {
+      toast.error('Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -199,6 +216,14 @@ export default function AdminDashboard() {
                 App Guidelines
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
+              onClick={() => setReportModalOpen(true)}
+            >
+              <FileText className="w-4 h-4" />
+              Generate Report
+            </Button>
           </div>
         </div>
 
@@ -410,6 +435,137 @@ export default function AdminDashboard() {
           </div>
         </Modal>
       )}
+
+      {/* Global Report Modal */}
+      {reportModalOpen && (
+        <ReportSelectionModal
+          onClose={() => setReportModalOpen(false)}
+          onSelect={handleGlobalReport}
+          loading={generatingReport}
+        />
+      )}
+    </div>
+  );
+}
+
+// Report Selection Modal
+function ReportSelectionModal({
+  onClose,
+  onSelect,
+  loading
+}: {
+  onClose: () => void;
+  onSelect: (type: ReportType, year?: number, month?: number) => void;
+  loading: boolean;
+}) {
+  const years = [2024, 2025, 2026];
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <FileText className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Generate Report</h2>
+              <p className="text-sm text-slate-500">Select the type of report you need</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Full Report Option */}
+          <button
+            onClick={() => onSelect('full')}
+            disabled={loading}
+            className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all group disabled:opacity-50"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 flex items-center justify-center group-hover:border-emerald-200 group-hover:bg-emerald-50 transition-colors">
+                <FileText className="w-6 h-6 text-slate-400 group-hover:text-emerald-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-slate-900">Full System Report</p>
+                <p className="text-xs text-slate-500">All properties, tenants, and full rent history</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500" />
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-slate-100"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-slate-400">Time-filtered Reports</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase px-1">Select Year</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase px-1">Select Month</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-2">
+            <Button
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-11"
+              disabled={loading}
+              onClick={() => onSelect('yearly', selectedYear)}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+              Yearly ({selectedYear})
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-11"
+              disabled={loading}
+              onClick={() => onSelect('monthly', selectedYear, selectedMonth)}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+              {months[selectedMonth]}
+            </Button>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="bg-emerald-50 p-4 border-t border-emerald-100">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+              <p className="text-sm font-medium text-emerald-800">Compiling data and generating Excel...</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
