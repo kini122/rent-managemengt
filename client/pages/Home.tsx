@@ -50,11 +50,6 @@ export default function Home() {
                   Setup Storage
                 </Button>
               </Link>
-              <Link to="/debug">
-                <Button size="sm" variant="outline" className="border-amber-200">
-                  Check Status
-                </Button>
-              </Link>
             </div>
           </div>
         )}
@@ -85,11 +80,6 @@ export default function Home() {
                     <Link to="/setup">
                       <Button size="sm" className="bg-red-600 hover:bg-red-700">
                         View Database Setup
-                      </Button>
-                    </Link>
-                    <Link to="/debug">
-                      <Button size="sm" variant="outline" className="border-red-200">
-                        Check Status
                       </Button>
                     </Link>
                   </div>

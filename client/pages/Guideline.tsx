@@ -170,11 +170,8 @@ export default function Guideline() {
                 If you encounter database connection issues or need to reset your environment, you can use the built-in diagnostic tools.
               </p>
               <div className="flex flex-wrap gap-2">
-                <Link to="/debug">
-                  <Button size="sm" variant="secondary" className="text-xs">Run Diagnostics</Button>
-                </Link>
                 <Link to="/setup">
-                  <Button size="sm" variant="outline" className="text-xs text-white border-white/20 hover:bg-white/10">Database Setup</Button>
+                  <Button size="sm" variant="outline" className="text-white border-white/20 hover:bg-white/10">Database Setup</Button>
                 </Link>
               </div>
             </div>

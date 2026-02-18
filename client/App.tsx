@@ -13,7 +13,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminProperties from "./pages/AdminProperties";
 import Setup from "./pages/Setup";
 import Guideline from "./pages/Guideline";
-import Debug from "./pages/Debug";
 import StorageMigration from "./pages/StorageMigration";
 import NotFound from "./pages/NotFound";
 
@@ -26,7 +25,6 @@ const AppContent = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/debug" element={<Debug />} />
         <Route path="/guideline" element={<Guideline />} />
         <Route path="/setup" element={<Setup />} />
         <Route path="/storage-migration" element={<StorageMigration />} />
