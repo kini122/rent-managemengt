@@ -101,6 +101,7 @@ export default function PropertyDetail() {
           <TenantSummary
             property={property}
             tenancy={tenancy}
+            rentPayments={rentPayments}
             onEdit={refetch}
             onCreateTenancy={() => setShowTenancyModal(true)}
             onTenancyEnded={() => {

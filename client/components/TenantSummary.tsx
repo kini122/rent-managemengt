@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Property, Tenancy, Tenant } from "@/types/index";
+import type { Property, Tenancy, Tenant, RentPayment } from "@/types/index";
 import { useState, useEffect } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import {
   updateTenant,
   updateTenancy,
@@ -23,6 +24,7 @@ function generateWhatsAppLink(phone: string): string {
 export interface TenantSummaryProps {
   property: Property;
   tenancy?: (Tenancy & { tenant: Tenant }) | null;
+  rentPayments?: RentPayment[];
   onEdit?: () => void;
   onCreateTenancy?: () => void;
   onTenancyEnded?: () => void;
@@ -31,6 +33,7 @@ export interface TenantSummaryProps {
 export function TenantSummary({
   property,
   tenancy,
+  rentPayments = [],
   onEdit,
   onCreateTenancy,
   onTenancyEnded,
@@ -135,6 +138,59 @@ export function TenantSummary({
     }
   };
 
+  const handleGenerateReport = () => {
+    if (!tenancy) return;
+
+    try {
+      // 1. Prepare Tenancy Info Sheet
+      const tenancyData = [
+        { Field: "Property Address", Value: property.address },
+        { Field: "Property Details", Value: property.details },
+        { Field: "Tenant Name", Value: tenancy.tenant.name },
+        { Field: "Tenant Phone", Value: tenancy.tenant.phone },
+        { Field: "Tenant ID Proof", Value: tenancy.tenant.id_proof || "-" },
+        { Field: "Tenant Notes", Value: tenancy.tenant.notes || "-" },
+        { Field: "Start Date", Value: new Date(tenancy.start_date).toLocaleDateString("en-GB") },
+        { Field: "End Date", Value: tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString("en-GB") : "-" },
+        { Field: "Status", Value: tenancy.status },
+        { Field: "Monthly Rent", Value: `₹${tenancy.monthly_rent.toLocaleString("en-IN")}` },
+        { Field: "Advance Amount", Value: `₹${tenancy.advance_amount.toLocaleString("en-IN")}` },
+        { Field: "Tenancy ID", Value: tenancy.tenancy_id },
+        { Field: "Property ID", Value: property.property_id },
+      ];
+
+      // 2. Prepare Rent Payments Sheet
+      const paymentsData = rentPayments.map((p) => ({
+        Month: new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+        Amount: p.rent_amount,
+        Status: p.payment_status,
+        "Paid Date": p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
+        Remarks: p.remarks || "-",
+      }));
+
+      // Create workbook and add sheets
+      const wb = XLSX.utils.book_new();
+
+      const wsTenancy = XLSX.utils.json_to_sheet(tenancyData);
+      XLSX.utils.book_append_sheet(wb, wsTenancy, "Tenancy Details");
+
+      if (paymentsData.length > 0) {
+        const wsPayments = XLSX.utils.json_to_sheet(paymentsData);
+        XLSX.utils.book_append_sheet(wb, wsPayments, "Payment History");
+      }
+
+      // Generate filename
+      const fileName = `${property.address.replace(/[/\\?%*:|"<>]/g, "-")}_Report.xlsx`;
+
+      // Export file
+      XLSX.writeFile(wb, fileName);
+      toast.success("Report generated successfully");
+    } catch (err) {
+      console.error("Report generation error:", err);
+      toast.error("Failed to generate report");
+    }
+  };
+
   if (!tenancy) {
     return (
       <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -159,11 +215,22 @@ export function TenantSummary({
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-4 md:p-6">
       <div className="flex flex-col md:flex-row items-start md:justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
-            {property.address}
-          </h2>
-          <p className="text-slate-600 mt-1 text-sm md:text-base">{property.details}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
+              {property.address}
+            </h2>
+            <p className="text-slate-600 mt-1 text-sm md:text-base">{property.details}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGenerateReport}
+            className="flex items-center gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 h-8 px-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="text-xs font-semibold">Generate Report</span>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {isEditing ? (
