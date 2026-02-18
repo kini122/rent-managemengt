@@ -161,18 +161,19 @@ export function TenantSummary({
       ];
 
       // 2. Prepare Detailed Rent History Sheet
-      const historyData = rentPayments.map((p) => ({
+      console.log("Generating report with payments:", rentPayments);
+      const historyData = (rentPayments || []).map((p) => ({
         "Rent ID": p.rent_id,
-        Month: new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+        Month: p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
         Amount: p.rent_amount,
-        Status: p.payment_status.toUpperCase(),
+        Status: (p.payment_status || "pending").toUpperCase(),
         "Paid Date": p.paid_date ? new Date(p.paid_date).toLocaleDateString("en-GB") : "-",
         Remarks: p.remarks || "-",
-        "Created At": new Date(p.created_at).toLocaleString("en-GB"),
+        "Created At": p.created_at ? new Date(p.created_at).toLocaleString("en-GB") : "-",
       }));
 
       // 3. Prepare Pending & Partial Details Sheet
-      const pendingAndPartial = rentPayments.filter(p => p.payment_status !== "paid");
+      const pendingAndPartial = (rentPayments || []).filter(p => p.payment_status !== "paid");
       const pendingData = pendingAndPartial.map((p) => {
         let outstandingAmount = p.rent_amount;
         if (p.payment_status === "partial" && p.remarks) {
@@ -183,10 +184,10 @@ export function TenantSummary({
         }
 
         return {
-          Month: new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+          Month: p.rent_month ? new Date(p.rent_month).toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "-",
           "Total Rent": p.rent_amount,
           "Remaining Balance": outstandingAmount,
-          Status: p.payment_status.toUpperCase(),
+          Status: (p.payment_status || "pending").toUpperCase(),
           Remarks: p.remarks || "-",
         };
       });
