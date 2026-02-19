@@ -1,17 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { 
-  BookOpen, 
-  Home, 
-  Users, 
-  CreditCard, 
-  BarChart3, 
-  Settings, 
+import {
+  BookOpen,
+  Home,
+  Users,
+  CreditCard,
+  BarChart3,
+  Settings,
   ArrowRight,
   ShieldCheck,
   Smartphone,
   CheckCircle2,
-  FileText
+  FileText,
+  MessageCircle,
+  FileSpreadsheet,
+  History,
+  AlertTriangle
 } from "lucide-react";
 
 export default function Guideline() {
@@ -150,6 +154,107 @@ export default function Guideline() {
                 <h4 className="font-bold text-slate-900 mb-1">Stay Updated</h4>
                 <p className="text-sm text-slate-600">The home page summary automatically updates as you mark rent as paid or add new properties.</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* WhatsApp Notifying System Detail */}
+        <div className="bg-white rounded-xl border border-slate-200 p-8 mb-12 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <MessageCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">WhatsApp Notifying System</h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div>
+              <p className="text-slate-600 mb-6 leading-relaxed">
+                The Notify System is designed to eliminate manual calculation errors and save time when communicating with tenants about outstanding rent. It automatically drafts a professional, detailed notice ready to be sent with one click.
+              </p>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Where to Find It</p>
+                    <p className="text-xs text-slate-600">Available in "Property Details" for active tenants and in the "Ended Tenancies" section of the Admin Dashboard for previous tenants with unsettled accounts.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Smart "Pending" Detection</p>
+                    <p className="text-xs text-slate-600">The system scans all historical records. If a tenant has any unpaid or partially paid months, a "Pending" label appears. Clicking "Notify" fetches these specific details automatically.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-100">
+              <h4 className="font-bold text-slate-900 mb-4 text-sm uppercase tracking-wider">What the tenant receives:</h4>
+              <div className="bg-white rounded-lg p-4 shadow-sm text-xs font-mono text-slate-700 space-y-2 border-l-4 border-green-500">
+                <p>Hello [Tenant Name],</p>
+                <p>This is to notify you regarding your rental property at: [Address]</p>
+                <p className="font-bold">📋 PENDING & PARTIAL RENT DETAILS:</p>
+                <p className="border-b border-slate-200 pb-1">Month | Status | Amount</p>
+                <p>Dec 25 | Partial | ₹48,000</p>
+                <p>Nov 25 | Pending | ₹50,000</p>
+                <p className="font-bold pt-2">TOTAL OUTSTANDING: ₹98,000</p>
+                <p className="pt-2 text-[10px] italic">...and a polite closing message.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Audit Generation Detail */}
+        <div className="bg-white rounded-xl border border-slate-200 p-8 mb-12 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <FileSpreadsheet className="w-6 h-6 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Audit & Report Generation</h2>
+          </div>
+
+          <p className="text-slate-600 mb-8 leading-relaxed">
+            The reporting system provides an exhaustive, "strictly detailed" export of every minute detail in your database. These reports are generated in professional Excel format (.xlsx) for full offline transparency.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
+              <History className="w-5 h-5 text-blue-500 mb-3" />
+              <h4 className="font-bold text-slate-900 text-sm mb-2">Master Audit Log</h4>
+              <p className="text-xs text-slate-600 leading-relaxed">A massive "All-in-One" sheet that joins every single payment with its corresponding property, tenant, and tenancy details in a single row.</p>
+            </div>
+            <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mb-3" />
+              <h4 className="font-bold text-slate-900 text-sm mb-2">Dues Reconciliation</h4>
+              <p className="text-xs text-slate-600 leading-relaxed">A dedicated "Pending Dues" sheet focusing strictly on outstanding balances and partial payment breakdowns for quick financial audits.</p>
+            </div>
+            <div className="p-5 bg-slate-50 rounded-xl border border-slate-100">
+              <ShieldCheck className="w-5 h-5 text-emerald-500 mb-3" />
+              <h4 className="font-bold text-slate-900 text-sm mb-2">Full Audit Trail</h4>
+              <p className="text-xs text-slate-600 leading-relaxed">Includes database IDs and registration timestamps for every record, providing a verifiable chain of evidence for all transactions.</p>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+            <h4 className="font-bold text-blue-900 mb-4 text-sm">Every Report Includes 7 Comprehensive Sheets:</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                "1. Master Audit Log",
+                "2. All Tenancies",
+                "3. Rent Payments",
+                "4. All Properties",
+                "5. All Tenants",
+                "6. Pending Dues Only",
+                "7. Documents Audit",
+                "Financial Statistics"
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs font-medium text-blue-800">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
         </div>
