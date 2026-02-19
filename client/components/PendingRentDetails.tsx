@@ -8,7 +8,7 @@ function generateWhatsAppNotifyMessage(
 ): string {
   let message = `Hello ${tenantName},\n\n`;
   message += `This is to notify you regarding your rental property at:\n${propertyAddress}\n\n`;
-  message += `📋 PENDING & PARTIAL RENT DETAILS:\n\n`;
+  message += `PENDING & PARTIAL RENT DETAILS:\n\n`;
 
   // Create table structure with aligned columns
   message += `Month          | Status   | Amount\n`;

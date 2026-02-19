@@ -195,7 +195,7 @@ export default function Guideline() {
               <div className="bg-white rounded-lg p-4 shadow-sm text-xs font-mono text-slate-700 space-y-2 border-l-4 border-green-500">
                 <p>Hello [Tenant Name],</p>
                 <p>This is to notify you regarding your rental property at: [Address]</p>
-                <p className="font-bold">📋 PENDING & PARTIAL RENT DETAILS:</p>
+                <p className="font-bold">PENDING & PARTIAL RENT DETAILS:</p>
                 <p className="border-b border-slate-200 pb-1">Month | Status | Amount</p>
                 <p>Dec 25 | Partial | ₹48,000</p>
                 <p>Nov 25 | Pending | ₹50,000</p>
