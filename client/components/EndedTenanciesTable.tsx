@@ -1,10 +1,69 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Input } from "@/components/ui/input";
-import { Loader2, ChevronDown, ChevronUp, Edit2, Check, X } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Edit2, Check, X, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { updateRentPayment } from "@/services/supabaseAdmin";
 import type { Tenancy, Tenant, Property, RentPayment } from "@/types/index";
+
+function generateWhatsAppNotifyMessage(
+  tenantName: string,
+  propertyAddress: string,
+  payments: RentPayment[],
+): string {
+  let message = `Hello ${tenantName},\n\n`;
+  message += `This is to notify you regarding your previous rental property at:\n${propertyAddress}\n\n`;
+  message += `📋 PENDING & PARTIAL RENT DETAILS (ENDED TENANCY):\n\n`;
+
+  // Create table structure with aligned columns
+  message += `Month          | Status   | Amount\n`;
+  message += `────────────────────────────────────\n`;
+
+  let totalOutstanding = 0;
+
+  for (const payment of payments) {
+    const monthName = new Date(payment.rent_month).toLocaleDateString("en-GB", {
+      month: "short",
+      year: "2-digit",
+    });
+
+    let outstandingAmount = payment.rent_amount;
+    if (payment.payment_status === "partial" && payment.remarks) {
+      const match = payment.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+      if (match) {
+        outstandingAmount = parseInt(match[1].replace(/,/g, ""), 10);
+      }
+    }
+
+    totalOutstanding += outstandingAmount;
+
+    const status = payment.payment_status === "pending" ? "Pending" : "Partial";
+    const amount = `₹${outstandingAmount.toLocaleString("en-IN")}`;
+
+    // Format with proper spacing
+    const paddedMonth = monthName.padEnd(15);
+    const paddedStatus = status.padEnd(9);
+    message += `${paddedMonth}| ${paddedStatus}| ${amount}\n`;
+  }
+
+  message += `────────────────────────────────────\n`;
+  message += `TOTAL OUTSTANDING: ₹${totalOutstanding.toLocaleString("en-IN")}\n\n`;
+  message += `Kindly arrange to settle these dues at your earliest convenience.\n\n`;
+  message += `For any queries, please feel free to reach out.\n`;
+  message += `Thank you.`;
+
+  return message;
+}
+
+function generateWhatsAppLink(phone: string, message: string): string {
+  let formattedPhone = phone.replace(/\D/g, "");
+  if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+    formattedPhone = "91" + formattedPhone;
+  }
+
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+}
 
 interface EndedTenancyRecord extends Tenancy {
   property: Property;
@@ -15,6 +74,7 @@ export function EndedTenanciesTable() {
   const [tenancies, setTenancies] = useState<EndedTenancyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [notifyingId, setNotifyingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchEndedTenancies();
@@ -48,6 +108,46 @@ export function EndedTenanciesTable() {
       newExpanded.add(tenancyId);
     }
     setExpandedRows(newExpanded);
+  };
+
+  const handleNotifyTenant = async (tenancy: EndedTenancyRecord) => {
+    if (!tenancy.tenant?.phone) {
+      toast.error("Tenant phone number not found");
+      return;
+    }
+
+    try {
+      setNotifyingId(tenancy.tenancy_id);
+
+      // Fetch pending/partial payments for this tenancy
+      const { data: payments, error } = await supabase
+        .from("rent_payments")
+        .select("*")
+        .eq("tenancy_id", tenancy.tenancy_id)
+        .in("payment_status", ["pending", "partial"])
+        .order("rent_month", { ascending: false });
+
+      if (error) throw error;
+
+      if (!payments || payments.length === 0) {
+        toast.info("No pending or partial rent found for this tenancy");
+        return;
+      }
+
+      const message = generateWhatsAppNotifyMessage(
+        tenancy.tenant.name,
+        tenancy.property?.address || "Unknown Property",
+        payments
+      );
+
+      const link = generateWhatsAppLink(tenancy.tenant.phone, message);
+      window.open(link, "_blank");
+      toast.success("WhatsApp notification opened");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate notification");
+    } finally {
+      setNotifyingId(null);
+    }
   };
 
   if (loading) {
@@ -92,6 +192,9 @@ export function EndedTenanciesTable() {
               <th className="px-4 py-3 text-center font-semibold text-slate-900">
                 Status
               </th>
+              <th className="px-4 py-3 text-center font-semibold text-slate-900">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -101,6 +204,8 @@ export function EndedTenanciesTable() {
                 tenancy={tenancy}
                 isExpanded={expandedRows.has(tenancy.tenancy_id)}
                 onToggleExpand={() => toggleRowExpand(tenancy.tenancy_id)}
+                onNotify={() => handleNotifyTenant(tenancy)}
+                isNotifying={notifyingId === tenancy.tenancy_id}
               />
             ))}
           </tbody>
@@ -151,6 +256,21 @@ export function EndedTenanciesTable() {
               <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
                 {tenancy.status}
               </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNotifyTenant(tenancy);
+                }}
+                disabled={notifyingId === tenancy.tenancy_id}
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {notifyingId === tenancy.tenancy_id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <MessageCircle className="w-3 h-3" />
+                )}
+                Notify
+              </button>
             </div>
 
             {expandedRows.has(tenancy.tenancy_id) && (
@@ -169,10 +289,14 @@ function EndedTenancyRow({
   tenancy,
   isExpanded,
   onToggleExpand,
+  onNotify,
+  isNotifying,
 }: {
   tenancy: EndedTenancyRecord;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onNotify: () => void;
+  isNotifying: boolean;
 }) {
   return (
     <>
@@ -220,6 +344,24 @@ function EndedTenancyRow({
           <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium whitespace-nowrap">
             {tenancy.status}
           </span>
+        </td>
+        <td className="px-4 py-4 text-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNotify();
+            }}
+            disabled={isNotifying}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+            title="Notify tenant about pending rent"
+          >
+            {isNotifying ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <MessageCircle className="w-3 h-3" />
+            )}
+            Notify
+          </button>
         </td>
       </tr>
 
