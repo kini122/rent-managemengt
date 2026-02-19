@@ -54,6 +54,10 @@ export default function AdminDashboard() {
       try {
         setLoading(true);
 
+        // Get metrics
+        const dashboardMetrics = await getDashboardMetrics();
+        setMetrics(dashboardMetrics);
+
         // Fix "345 rr" inactive status if it has an active tenancy
         const { data: inactive345rr } = await supabase
           .from('properties')

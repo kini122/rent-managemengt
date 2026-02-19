@@ -341,7 +341,7 @@ export async function getDashboardMetrics() {
 
   const { data: occupied } = await supabase
     .from("tenancies")
-    .select("tenancy_id, property:properties!inner(is_active)")
+    .select("tenancy_id, properties!inner(is_active)")
     .is("end_date", null)
     .eq("properties.is_active", true);
 
