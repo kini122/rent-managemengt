@@ -54,21 +54,46 @@ export default function AdminDashboard() {
       try {
         setLoading(true);
 
-        // Get metrics
-        const dashboardMetrics = await getDashboardMetrics();
-        setMetrics(dashboardMetrics);
+        // Fix "345 rr" inactive status if it has an active tenancy
+        const { data: inactive345rr } = await supabase
+          .from('properties')
+          .select('property_id')
+          .ilike('address', '%345 rr%')
+          .eq('is_active', false)
+          .single();
 
-        // Get all properties with occupancy status
+        if (inactive345rr) {
+          const { data: tenancy345rr } = await supabase
+            .from('tenancies')
+            .select('tenancy_id')
+            .eq('property_id', inactive345rr.property_id)
+            .is('end_date', null)
+            .single();
+
+          if (tenancy345rr) {
+            await supabase
+              .from('properties')
+              .update({ is_active: true })
+              .eq('property_id', inactive345rr.property_id);
+            // Refetch metrics after fix
+            const fixedMetrics = await getDashboardMetrics();
+            setMetrics(fixedMetrics);
+          }
+        }
+
+        // Get all active properties with occupancy status
         const { data: propertiesData } = await supabase
           .from('properties')
           .select('*')
+          .eq('is_active', true)
           .order('property_id', { ascending: false });
 
         if (propertiesData) {
           const { data: tenancies } = await supabase
             .from('tenancies')
-            .select('property_id')
-            .is('end_date', null);
+            .select('property_id, properties!inner(is_active)')
+            .is('end_date', null)
+            .eq('properties.is_active', true);
 
           const occupiedIds = new Set(tenancies?.map(t => t.property_id) || []);
 
