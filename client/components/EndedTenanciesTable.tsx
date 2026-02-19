@@ -68,6 +68,7 @@ function generateWhatsAppLink(phone: string, message: string): string {
 interface EndedTenancyRecord extends Tenancy {
   property: Property;
   tenant: Tenant;
+  hasPending?: boolean;
 }
 
 export function EndedTenanciesTable() {
@@ -85,12 +86,18 @@ export function EndedTenanciesTable() {
       setLoading(true);
       const { data, error } = await supabase
         .from("tenancies")
-        .select("*, property:properties(*), tenant:tenants(*)")
+        .select("*, property:properties(*), tenant:tenants(*), rent_payments(payment_status)")
         .not("end_date", "is", null)
         .order("end_date", { ascending: false });
 
       if (error) throw error;
-      setTenancies(data || []);
+
+      const enrichedData = (data || []).map(t => ({
+        ...t,
+        hasPending: t.rent_payments?.some((p: any) => p.payment_status === "pending" || p.payment_status === "partial")
+      }));
+
+      setTenancies(enrichedData);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to fetch ended tenancies",
@@ -256,21 +263,31 @@ export function EndedTenanciesTable() {
               <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
                 {tenancy.status}
               </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNotifyTenant(tenancy);
-                }}
-                disabled={notifyingId === tenancy.tenancy_id}
-                className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-              >
-                {notifyingId === tenancy.tenancy_id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <MessageCircle className="w-3 h-3" />
-                )}
-                Notify
-              </button>
+              {expandedRows.has(tenancy.tenancy_id) ? (
+                tenancy.hasPending && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNotifyTenant(tenancy);
+                    }}
+                    disabled={notifyingId === tenancy.tenancy_id}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {notifyingId === tenancy.tenancy_id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <MessageCircle className="w-3 h-3" />
+                    )}
+                    Notify
+                  </button>
+                )
+              ) : (
+                tenancy.hasPending && (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                    Pending
+                  </span>
+                )
+              )}
             </div>
 
             {expandedRows.has(tenancy.tenancy_id) && (
@@ -346,22 +363,32 @@ function EndedTenancyRow({
           </span>
         </td>
         <td className="px-4 py-4 text-center">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onNotify();
-            }}
-            disabled={isNotifying}
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-            title="Notify tenant about pending rent"
-          >
-            {isNotifying ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <MessageCircle className="w-3 h-3" />
-            )}
-            Notify
-          </button>
+          {isExpanded ? (
+            tenancy.hasPending && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNotify();
+                }}
+                disabled={isNotifying}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                title="Notify tenant about pending rent"
+              >
+                {isNotifying ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <MessageCircle className="w-3 h-3" />
+                )}
+                Notify
+              </button>
+            )
+          ) : (
+            tenancy.hasPending && (
+              <span className="inline-block px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                Pending
+              </span>
+            )
+          )}
         </td>
       </tr>
 
