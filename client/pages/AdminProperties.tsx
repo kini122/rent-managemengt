@@ -72,8 +72,12 @@ export default function AdminProperties() {
 
     try {
       setDeleting(id);
-      await deleteProperty(id);
-      toast.success('Property deleted successfully');
+      const result = await deleteProperty(id);
+      if (result?.softDelete) {
+        toast.success('Property deactivated and tenancy ended. History preserved in "Ended Tenancies".');
+      } else {
+        toast.success('Property deleted successfully');
+      }
       await fetchProperties();
     } catch (err) {
       console.error('Delete error:', err);

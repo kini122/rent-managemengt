@@ -34,33 +34,45 @@ export async function updateProperty(id: number, data: Partial<Property>) {
 }
 
 export async function deleteProperty(id: number) {
-  // 1. First, delete all tenancies for this property
-  // This will cascade to rent_payments and tenancy_documents if the DB is set up correctly,
-  // but we'll do it step by step to be absolutely sure and handle cases where cascades might fail.
-
-  // Get tenancy IDs first
+  // 1. Get all tenancies for this property
   const { data: tenancies } = await supabase
     .from("tenancies")
-    .select("tenancy_id")
+    .select("*")
     .eq("property_id", id);
 
-  if (tenancies && tenancies.length > 0) {
-    const tenancyIds = tenancies.map(t => t.tenancy_id);
+  const hasTenancies = tenancies && tenancies.length > 0;
 
-    // Delete dependent records for all tenancies of this property
-    // We do this manually to avoid potential RLS or constraint issues with CASCADE
-    await supabase.from("rent_payments").delete().in("tenancy_id", tenancyIds);
-    await supabase.from("tenancy_documents").delete().in("tenancy_id", tenancyIds);
-    await supabase.from("tenancies").delete().eq("property_id", id);
+  if (hasTenancies) {
+    // Check if it's "not vacant" (has an active tenancy)
+    const activeTenancy = tenancies.find(t => !t.end_date && t.status === "active");
+
+    if (activeTenancy) {
+      // "Add the tenancy to the ended tenancies"
+      // This means marking it as ended so it shows up in history
+      await endTenancy(activeTenancy.tenancy_id);
+    }
+
+    // Since we want to keep history in "Ended Tenancies", we CANNOT hard-delete
+    // the property record if it has any tenancy associations (active or ended).
+    // We'll perform a "Soft Delete" by marking it inactive and maybe hiding it.
+
+    const { error } = await supabase
+      .from("properties")
+      .update({ is_active: false }) // Use is_active as soft-delete for properties with history
+      .eq("property_id", id);
+
+    if (error) throw error;
+    return { softDelete: true }; // Indicate history was preserved
   }
 
-  // 2. Finally delete the property itself
-  const { error } = await supabase
+  // 2. If it is vacant and has NO history at all, we can hard delete everything
+  const { error: deleteError } = await supabase
     .from("properties")
     .delete()
     .eq("property_id", id);
 
-  if (error) throw error;
+  if (deleteError) throw deleteError;
+  return { softDelete: false };
 }
 
 // Tenants
