@@ -5,6 +5,8 @@ import type {
   Tenancy,
   RentPayment,
   TenancyDocument,
+  LandlordProfile,
+  Receipt,
 } from "@/types/index";
 
 // Properties
@@ -538,4 +540,104 @@ export async function deleteTenancyDocument(
     .eq("document_id", documentId);
 
   if (dbError) throw dbError;
+}
+
+// Landlord Profile Management
+export async function getLandlordProfile(): Promise<LandlordProfile | null> {
+  const { data, error } = await supabase
+    .from("landlord_profile")
+    .select("*")
+    .single();
+
+  // Return null if no profile exists (not an error)
+  if (error?.code === "PGRST116") {
+    return null;
+  }
+
+  if (error) throw error;
+  return data as LandlordProfile;
+}
+
+export async function saveLandlordProfile(
+  data: Omit<LandlordProfile, "id" | "created_at" | "updated_at">,
+) {
+  // Check if profile already exists
+  const existing = await getLandlordProfile();
+
+  if (existing) {
+    // Update existing profile
+    const { data: result, error } = await supabase
+      .from("landlord_profile")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result as LandlordProfile;
+  } else {
+    // Create new profile
+    const { data: result, error } = await supabase
+      .from("landlord_profile")
+      .insert([
+        {
+          ...data,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result as LandlordProfile;
+  }
+}
+
+// Receipt Management
+export async function getReceiptForPayment(rentId: number): Promise<Receipt | null> {
+  const { data, error } = await supabase
+    .from("receipts")
+    .select("*")
+    .eq("rent_id", rentId)
+    .single();
+
+  // Return null if no receipt exists (not an error)
+  if (error?.code === "PGRST116") {
+    return null;
+  }
+
+  if (error) throw error;
+  return data as Receipt;
+}
+
+export async function saveReceipt(
+  data: Omit<Receipt, "id" | "generated_at">,
+) {
+  const { data: result, error } = await supabase
+    .from("receipts")
+    .insert([
+      {
+        ...data,
+        generated_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result as Receipt;
+}
+
+export async function getAllReceipts(): Promise<Receipt[]> {
+  const { data, error } = await supabase
+    .from("receipts")
+    .select("*")
+    .order("generated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as Receipt[];
 }

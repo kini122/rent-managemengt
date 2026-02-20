@@ -55,3 +55,26 @@ export interface PropertyWithTenant extends Property {
   tenancy?: Tenancy & { tenant: Tenant };
   pending_count: number;
 }
+
+export interface LandlordProfile {
+  id: number;
+  landlord_name: string;
+  phone: string;
+  building_name: string;
+  address: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Receipt {
+  id: number;
+  rent_id: number;
+  file_path: string;
+  download_url: string;
+  receipt_number: string;
+  generated_at: string;
+}

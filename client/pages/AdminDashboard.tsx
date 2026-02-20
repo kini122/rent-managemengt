@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
+import { LandlordProfileModal } from '@/components/LandlordProfileModal';
+import { ViewReceiptsModal } from '@/components/ViewReceiptsModal';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react';
+import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar, Building2, Receipt } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
 import { generateGlobalReport, ReportType } from '@/services/reportGenerator';
 import { toast } from 'sonner';
@@ -35,6 +37,8 @@ export default function AdminDashboard() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [landlordProfileOpen, setLandlordProfileOpen] = useState(false);
+  const [viewReceiptsOpen, setViewReceiptsOpen] = useState(false);
 
   const handleGlobalReport = async (type: ReportType, year?: number, month?: number) => {
     try {
@@ -252,6 +256,22 @@ export default function AdminDashboard() {
             >
               <FileText className="w-4 h-4" />
               Generate Report
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+              onClick={() => setViewReceiptsOpen(true)}
+            >
+              <Receipt className="w-4 h-4" />
+              View Receipts
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
+              onClick={() => setLandlordProfileOpen(true)}
+            >
+              <Building2 className="w-4 h-4" />
+              Landlord Profile
             </Button>
           </div>
         </div>
@@ -472,6 +492,16 @@ export default function AdminDashboard() {
           onSelect={handleGlobalReport}
           loading={generatingReport}
         />
+      )}
+
+      {/* Landlord Profile Modal */}
+      {landlordProfileOpen && (
+        <LandlordProfileModal onClose={() => setLandlordProfileOpen(false)} />
+      )}
+
+      {/* View Receipts Modal */}
+      {viewReceiptsOpen && (
+        <ViewReceiptsModal onClose={() => setViewReceiptsOpen(false)} />
       )}
     </div>
   );
