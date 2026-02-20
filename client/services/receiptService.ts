@@ -57,21 +57,29 @@ export async function generateAndSendReceipt(
     year: "numeric",
   });
 
+  const cleanRemarks = (payment.remarks || "-")
+    .replace(/₹/g, "INR ")
+    .split(" | ")
+    .join("\n");
+
   const tableData = [
     ["Description", "Details"],
     ["Rent Month", monthStr],
     ["Rent Amount", `INR ${payment.rent_amount.toLocaleString("en-IN")}`],
     ["Payment Status", payment.payment_status.toUpperCase()],
     ["Paid Date", payment.paid_date ? new Date(payment.paid_date).toLocaleDateString("en-GB") : "-"],
-    ["Remarks", payment.remarks || "-"],
+    ["Remarks", cleanRemarks],
   ];
 
   tableData.forEach(([label, value]) => {
     doc.setFont("helvetica", "bold");
     doc.text(label, margin, y);
     doc.setFont("helvetica", "normal");
-    doc.text(value, 80, y);
-    y += 8;
+
+    // Split long text for remarks column or handle newlines
+    const textLines = doc.splitTextToSize(value, 110);
+    doc.text(textLines, 80, y);
+    y += (textLines.length * 6) + 2;
   });
 
   y += 10;

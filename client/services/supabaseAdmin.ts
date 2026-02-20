@@ -184,9 +184,18 @@ export async function updateRentPayment(
 
 export async function markRentAsPaid(id: number) {
   const today = new Date().toISOString().split("T")[0];
+
+  // Get current payment to check for rent amount and update remarks
+  const { data: payment } = await supabase
+    .from("rent_payments")
+    .select("rent_amount")
+    .eq("rent_id", id)
+    .single();
+
   return updateRentPayment(id, {
     payment_status: "paid",
     paid_date: today,
+    remarks: payment ? `Paid: ₹${payment.rent_amount.toLocaleString("en-IN")} | Remaining: ₹0` : "Fully Paid"
   });
 }
 

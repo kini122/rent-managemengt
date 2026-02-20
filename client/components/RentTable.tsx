@@ -95,12 +95,17 @@ export function RentTable({
         return;
       }
 
-      // Format remarks to include paid amount for partial payments
+      // Format remarks to include paid amount for partial/paid payments
       let finalRemarks = data.remarks;
       if (data.status === "partial" && data.paidAmount) {
         const remaining = payment.rent_amount - data.paidAmount;
         finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString("en-IN")} | Remaining: ₹${remaining.toLocaleString("en-IN")}`;
-        if (data.remarks && data.remarks.trim()) {
+        if (data.remarks && data.remarks.trim() && !data.remarks.includes("Paid: ₹")) {
+          finalRemarks += ` | ${data.remarks}`;
+        }
+      } else if (data.status === "paid") {
+        finalRemarks = `Paid: ₹${payment.rent_amount.toLocaleString("en-IN")} | Remaining: ₹0`;
+        if (data.remarks && data.remarks.trim() && !data.remarks.includes("Paid: ₹")) {
           finalRemarks += ` | ${data.remarks}`;
         }
       }
