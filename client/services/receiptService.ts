@@ -128,9 +128,16 @@ export async function generateAndSendReceipt(
     year: "numeric",
   });
 
+  // Format amount without special characters that cause encoding issues
+  const formattedAmount = `Rs. ${payment.rent_amount.toLocaleString("en-IN")}`;
+
+  // Add Purpose field (Shop for rent)
+  const purposeText = property.details || "Shop for rent";
+
   const paymentDetails = [
     { label: "Rent Month", value: monthStr },
-    { label: "Amount", value: `₹${payment.rent_amount.toLocaleString("en-IN")}` },
+    { label: "Purpose", value: purposeText },
+    { label: "Amount", value: formattedAmount },
     { label: "Payment Status", value: payment.payment_status.toUpperCase() },
     { label: "Paid Date", value: payment.paid_date ? new Date(payment.paid_date).toLocaleDateString("en-GB") : "-" },
   ];
@@ -141,16 +148,25 @@ export async function generateAndSendReceipt(
     doc.setFont("helvetica", "bold");
     doc.text(label + ":", margin, y);
     doc.setFont("helvetica", "normal");
-    doc.text(value, 80, y);
-    y += 7;
+    // Split text if it's too long, but with proper spacing
+    const textLines = doc.splitTextToSize(String(value), 110);
+    doc.text(textLines, 80, y);
+    y += textLines.length * 5 + 2;
   });
 
+  // Handle remarks with proper formatting
   if (payment.remarks && payment.remarks !== "-") {
-    const cleanRemarks = payment.remarks.replace(/₹/g, "₹ ");
-    const remarkLines = doc.splitTextToSize(cleanRemarks, 110);
+    // Clean up remarks - replace rupee symbol with text and fix spacing
+    let cleanRemarks = payment.remarks
+      .replace(/₹/g, "Rs. ")
+      .replace(/\s+/g, " ") // Replace multiple spaces with single space
+      .trim();
+
     doc.setFont("helvetica", "bold");
     doc.text("Remarks:", margin, y);
     doc.setFont("helvetica", "normal");
+
+    const remarkLines = doc.splitTextToSize(cleanRemarks, 110);
     doc.text(remarkLines, 80, y);
     y += remarkLines.length * 5 + 2;
   }
