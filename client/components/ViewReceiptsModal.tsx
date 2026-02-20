@@ -58,8 +58,11 @@ export function ViewReceiptsModal({ onClose }: ViewReceiptsModalProps) {
 
         setReceipts(enrichedReceipts);
       } catch (err) {
-        console.error('Failed to fetch receipts:', err);
-        toast.error('Failed to load receipts');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('Failed to fetch receipts:', errorMessage);
+        // Don't show error since table might not exist yet
+        // Just show empty state
+        setReceipts([]);
       } finally {
         setLoading(false);
       }

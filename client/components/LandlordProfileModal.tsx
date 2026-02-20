@@ -42,7 +42,10 @@ export function LandlordProfileModal({ onClose }: LandlordProfileModalProps) {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch landlord profile:', err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('Failed to fetch landlord profile:', errorMessage);
+        // Don't show error toast since it might be the table not existing yet
+        // Just continue with empty form
       } finally {
         setLoading(false);
       }
@@ -80,7 +83,9 @@ export function LandlordProfileModal({ onClose }: LandlordProfileModalProps) {
       toast.success('Landlord profile saved successfully');
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save profile');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save profile';
+      console.error('Save error:', errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

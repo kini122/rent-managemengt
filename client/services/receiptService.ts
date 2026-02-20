@@ -27,8 +27,13 @@ export async function generateAndSendReceipt(
     return whatsappUrl;
   }
 
-  // Get landlord profile
-  const landlordProfile = await getLandlordProfile();
+  // Get landlord profile (safe to fail if not set up)
+  let landlordProfile = null;
+  try {
+    landlordProfile = await getLandlordProfile();
+  } catch (err) {
+    console.warn('Could not load landlord profile, continuing without it');
+  }
 
   const doc = new jsPDF();
 
