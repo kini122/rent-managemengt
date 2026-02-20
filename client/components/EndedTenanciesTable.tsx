@@ -68,27 +68,28 @@ export function EndedTenanciesTable() {
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="w-12 px-4 py-3 text-center"></th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[150px]">
+              <th className="px-4 py-3 text-left font-semibold text-slate-900">
                 Property
               </th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[140px]">
+              <th className="px-4 py-3 text-left font-semibold text-slate-900">
                 Tenant
               </th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[100px]">
+              <th className="px-4 py-3 text-left font-semibold text-slate-900">
                 Start Date
               </th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 min-w-[100px]">
+              <th className="px-4 py-3 text-left font-semibold text-slate-900">
                 End Date
               </th>
-              <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900 min-w-[100px]">
+              <th className="px-4 py-3 text-right font-semibold text-slate-900">
                 Monthly Rent
               </th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900 min-w-[80px]">
+              <th className="px-4 py-3 text-center font-semibold text-slate-900">
                 Status
               </th>
             </tr>
@@ -104,6 +105,61 @@ export function EndedTenanciesTable() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden divide-y divide-slate-200">
+        {tenancies.map((tenancy) => (
+          <div key={tenancy.tenancy_id} className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-slate-900 truncate">{tenancy.property?.address}</p>
+                <p className="text-sm text-slate-600 mt-1">{tenancy.tenant?.name}</p>
+              </div>
+              <button
+                onClick={() => toggleRowExpand(tenancy.tenancy_id)}
+                className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+              >
+                {expandedRows.has(tenancy.tenancy_id) ? (
+                  <ChevronUp className="w-5 h-5" />
+                ) : (
+                  <ChevronDown className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div>
+                <p className="text-slate-500 font-medium">Start</p>
+                <p className="text-slate-900 font-medium">
+                  {new Date(tenancy.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium">End</p>
+                <p className="text-slate-900 font-medium">
+                  {tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-500 font-medium">Rent</p>
+                <p className="text-slate-900 font-medium">₹{(tenancy.monthly_rent / 1000).toFixed(0)}K</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <span className="inline-block px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+                {tenancy.status}
+              </span>
+            </div>
+
+            {expandedRows.has(tenancy.tenancy_id) && (
+              <div className="pt-3 border-t border-slate-200">
+                <ExpandedTenancyDetails tenancyId={tenancy.tenancy_id} />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

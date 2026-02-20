@@ -70,17 +70,18 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
     }
   };
 
-  const handleDownload = async (document: TenancyDocument) => {
+  const handleDownload = async (doc: TenancyDocument) => {
     try {
-      const blob = await downloadTenancyDocument(document.file_path);
+      const blob = await downloadTenancyDocument(doc);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = document.file_name;
+      link.download = doc.file_name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      toast.success("Download started");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to download document",

@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
 import { isConfigured } from '@/lib/supabaseClient';
+import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings } from 'lucide-react';
+import { Loader2, Settings, AlertCircle } from 'lucide-react';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
@@ -32,15 +33,61 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!isConfigured && (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-700 font-medium">
+            <p className="text-amber-700 font-medium mb-3">
               ⚠️ Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.
             </p>
+            <div className="flex gap-2">
+              <Link to="/storage-migration">
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
+                  Setup Storage
+                </Button>
+              </Link>
+              <Link to="/debug">
+                <Button size="sm" variant="outline" className="border-amber-200">
+                  Check Status
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 font-medium">Error: {error}</p>
+          <div className={`mb-6 p-4 rounded-lg border ${
+            isRLSError(error)
+              ? 'bg-red-50 border-red-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex gap-3">
+              <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                isRLSError(error) ? 'text-red-600' : 'text-red-600'
+              }`} />
+              <div className="flex-1">
+                <p className={`font-medium ${
+                  isRLSError(error) ? 'text-red-900' : 'text-red-700'
+                }`}>
+                  {isRLSError(error) ? 'Database Security Issue' : 'Error'}
+                </p>
+                <p className={`text-sm mt-1 ${
+                  isRLSError(error) ? 'text-red-800' : 'text-red-600'
+                }`}>
+                  {error}
+                </p>
+                {isRLSError(error) && (
+                  <div className="mt-4 flex gap-2">
+                    <Link to="/rls-fix">
+                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                        View RLS Fix
+                      </Button>
+                    </Link>
+                    <Link to="/debug">
+                      <Button size="sm" variant="outline" className="border-red-200">
+                        Check Status
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
