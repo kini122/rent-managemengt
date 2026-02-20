@@ -117,6 +117,8 @@ export default function PropertyDetail() {
             </h2>
             <RentTable
               payments={rentPayments}
+              property={property}
+              tenancy={tenancy || undefined}
               onMarkPaid={handleMarkRentAsPaid}
               onRefresh={refetch}
               isEditable={true}

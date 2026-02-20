@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { updateRentPayment } from "@/services/supabaseAdmin";
 import type { Tenancy, Tenant, Property, RentPayment } from "@/types/index";
 
+import { RentTable } from "./RentTable";
+
 function generateWhatsAppNotifyMessage(
   tenantName: string,
   propertyAddress: string,
@@ -292,7 +294,7 @@ export function EndedTenanciesTable() {
 
             {expandedRows.has(tenancy.tenancy_id) && (
               <div className="pt-3 border-t border-slate-200">
-                <ExpandedTenancyDetails tenancyId={tenancy.tenancy_id} />
+                <ExpandedTenancyDetails tenancy={tenancy} />
               </div>
             )}
           </div>
@@ -395,7 +397,7 @@ function EndedTenancyRow({
       {isExpanded && (
         <tr className="bg-slate-50 border-b border-slate-200">
           <td colSpan={7} className="px-4 py-4">
-            <ExpandedTenancyDetails tenancyId={tenancy.tenancy_id} />
+            <ExpandedTenancyDetails tenancy={tenancy} />
           </td>
         </tr>
       )}
@@ -403,19 +405,14 @@ function EndedTenancyRow({
   );
 }
 
-function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
+function ExpandedTenancyDetails({
+  tenancy
+}: {
+  tenancy: EndedTenancyRecord
+}) {
+  const tenancyId = tenancy.tenancy_id;
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editData, setEditData] = useState<{
-    [key: number]: {
-      paid_date: string;
-      remarks: string;
-      status?: "paid" | "pending" | "partial";
-      paidAmount?: number;
-    };
-  }>({});
-  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchRentPayments();
@@ -441,72 +438,6 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
     }
   };
 
-  const handleEditClick = (payment: RentPayment) => {
-    setEditingId(payment.rent_id);
-    // Parse paid amount from remarks if it exists (format: "Paid: ₹X")
-    let paidAmount = 0;
-    if (payment.payment_status === "partial" && payment.remarks) {
-      const match = payment.remarks.match(/Paid:\s*₹?([\d,]+)/);
-      if (match) {
-        paidAmount = parseInt(match[1].replace(/,/g, ""), 10);
-      }
-    }
-    setEditData({
-      [payment.rent_id]: {
-        paid_date: payment.paid_date || "",
-        remarks: payment.remarks || "",
-        status: payment.payment_status,
-        paidAmount: paidAmount || undefined,
-      },
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditData({});
-  };
-
-  const handleSaveEdit = async (payment: RentPayment) => {
-    try {
-      setSavingId(payment.rent_id);
-      const data = editData[payment.rent_id];
-
-      // If marking as partial, require paid amount
-      if (data.status === "partial" && !data.paidAmount) {
-        toast.error("Please enter the paid amount for partial payment");
-        setSavingId(null);
-        return;
-      }
-
-      // Format remarks to include paid amount for partial payments
-      let finalRemarks = data.remarks;
-      if (data.status === "partial" && data.paidAmount) {
-        const remaining = payment.rent_amount - data.paidAmount;
-        finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString("en-IN")} | Remaining: ₹${remaining.toLocaleString("en-IN")}`;
-        if (data.remarks && data.remarks.trim()) {
-          finalRemarks += ` | ${data.remarks}`;
-        }
-      }
-
-      await updateRentPayment(payment.rent_id, {
-        payment_status: data.status || payment.payment_status,
-        paid_date: data.paid_date || null,
-        remarks: finalRemarks,
-      });
-
-      toast.success("Payment details updated");
-      setEditingId(null);
-      setEditData({});
-      await fetchRentPayments();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update payment",
-      );
-    } finally {
-      setSavingId(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -524,176 +455,13 @@ function ExpandedTenancyDetails({ tenancyId }: { tenancyId: number }) {
       <h4 className="font-semibold text-slate-900 text-sm">
         Rent Payment History
       </h4>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-white border-b border-slate-300">
-            <tr>
-              <th className="px-4 py-2 text-left font-medium text-slate-700 min-w-[120px]">
-                Month
-              </th>
-              <th className="px-4 py-2 text-right font-medium text-slate-700 min-w-[90px]">
-                Amount
-              </th>
-              <th className="px-4 py-2 text-center font-medium text-slate-700 min-w-[80px]">
-                Status
-              </th>
-              <th className="px-4 py-2 text-center font-medium text-slate-700 min-w-[100px]">
-                Paid Date
-              </th>
-              <th className="px-4 py-2 text-left font-medium text-slate-700 min-w-[100px]">
-                Remarks
-              </th>
-              <th className="px-4 py-2 text-center font-medium text-slate-700 min-w-[80px]">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {rentPayments.map((payment) => {
-              const isEditing = editingId === payment.rent_id;
-              const paidDateStr = payment.paid_date
-                ? new Date(payment.paid_date).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })
-                : "-";
-
-              return (
-                <tr key={payment.rent_id} className="hover:bg-white">
-                  <td className="px-4 py-2 text-slate-900 font-medium">
-                    {new Date(payment.rent_month).toLocaleDateString("en-GB", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-4 py-2 font-medium text-slate-900 text-right">
-                    ₹{payment.rent_amount.toLocaleString("en-IN")}
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    {isEditing ? (
-                      <select
-                        value={
-                          editData[payment.rent_id]?.status ||
-                          payment.payment_status
-                        }
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            [payment.rent_id]: {
-                              ...editData[payment.rent_id],
-                              status: e.target.value as
-                                | "paid"
-                                | "pending"
-                                | "partial",
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="partial">Partial</option>
-                      </select>
-                    ) : (
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                          payment.payment_status === "paid"
-                            ? "bg-green-100 text-green-700"
-                            : payment.payment_status === "partial"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {payment.payment_status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    {isEditing ? (
-                      <Input
-                        type="date"
-                        value={editData[payment.rent_id]?.paid_date || ""}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            [payment.rent_id]: {
-                              ...editData[payment.rent_id],
-                              paid_date: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full text-xs"
-                      />
-                    ) : (
-                      <span className="text-slate-600 text-xs whitespace-nowrap">
-                        {paidDateStr}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-slate-600">
-                    {isEditing ? (
-                      <Input
-                        type="text"
-                        placeholder="Remarks..."
-                        value={editData[payment.rent_id]?.remarks || ""}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            [payment.rent_id]: {
-                              ...editData[payment.rent_id],
-                              remarks: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full text-xs"
-                      />
-                    ) : (
-                      <span className="text-slate-600 text-xs truncate block">
-                        {payment.remarks || "-"}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-center space-x-1">
-                    {isEditing ? (
-                      <>
-                        <button
-                          onClick={() => handleSaveEdit(payment)}
-                          disabled={savingId === payment.rent_id}
-                          className="inline-flex items-center justify-center w-6 h-6 text-emerald-600 hover:bg-emerald-50 rounded transition-colors disabled:opacity-50"
-                          title="Save"
-                        >
-                          {savingId === payment.rent_id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={savingId === payment.rent_id}
-                          className="inline-flex items-center justify-center w-6 h-6 text-slate-600 hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
-                          title="Cancel"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEditClick(payment)}
-                        className="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <RentTable
+        payments={rentPayments}
+        property={tenancy.property}
+        tenancy={tenancy}
+        onRefresh={fetchRentPayments}
+        isEditable={true}
+      />
     </div>
   );
 }

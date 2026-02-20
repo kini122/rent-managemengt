@@ -6,9 +6,13 @@ import { useState } from "react";
 import { Loader2, Edit2, Check, X } from "lucide-react";
 import { updateRentPayment } from "@/services/supabaseAdmin";
 import { toast } from "sonner";
+import { generateAndSendReceipt } from "@/services/receiptService";
+import type { Property, Tenancy, Tenant } from "@/types/index";
 
 export interface RentTableProps {
   payments: RentPayment[];
+  property?: Property;
+  tenancy?: Tenancy & { tenant: Tenant };
   onUpdateStatus?: (
     rentId: number,
     status: "paid" | "pending" | "partial",
@@ -35,11 +39,14 @@ function getStatusColor(status: string) {
 
 export function RentTable({
   payments,
+  property,
+  tenancy,
   onMarkPaid,
   onRefresh,
   isEditable = false,
 }: RentTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
     [key: number]: {
@@ -124,6 +131,29 @@ export function RentTable({
       await onRefresh?.();
     } finally {
       setLoading(null);
+    }
+  };
+
+  const handleSendReceipt = async (payment: RentPayment) => {
+    if (!property || !tenancy) {
+      toast.error("Property or Tenancy details missing");
+      return;
+    }
+
+    try {
+      setIsGenerating(payment.rent_id);
+      const whatsappUrl = await generateAndSendReceipt(
+        property,
+        tenancy.tenant,
+        tenancy,
+        payment
+      );
+      window.open(whatsappUrl, "_blank");
+      toast.success("Receipt generated and WhatsApp message prepared");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate receipt");
+    } finally {
+      setIsGenerating(null);
     }
   };
 
@@ -371,6 +401,24 @@ export function RentTable({
                             )}
                           </Button>
                         )}
+                        {isEditable && payment.payment_status === "paid" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSendReceipt(payment)}
+                            disabled={isGenerating === payment.rent_id}
+                            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                          >
+                            {isGenerating === payment.rent_id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              "Send Receipt"
+                            )}
+                          </Button>
+                        )}
                       </>
                     )}
                   </td>
@@ -593,6 +641,24 @@ export function RentTable({
                           </>
                         ) : (
                           <span className="text-xs">Mark Paid</span>
+                        )}
+                      </Button>
+                    )}
+                    {isEditable && payment.payment_status === "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendReceipt(payment)}
+                        disabled={isGenerating === payment.rent_id}
+                        className="flex-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      >
+                        {isGenerating === payment.rent_id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <span className="text-xs">Generating...</span>
+                          </>
+                        ) : (
+                          <span className="text-xs">Send Receipt</span>
                         )}
                       </Button>
                     )}
