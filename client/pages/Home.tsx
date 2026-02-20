@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
-import { isConfigured } from '@/lib/supabaseClient';
 import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, AlertCircle } from 'lucide-react';
+import { Loader2, Settings, AlertCircle, BookOpen } from 'lucide-react';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
@@ -13,44 +12,33 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Rent Management System</h1>
-              <p className="text-slate-600 mt-1">Manage your properties and track rent payments</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-bold text-slate-900 truncate">Rent Management</h1>
+              <p className="hidden md:block text-slate-600 mt-1">Manage your properties and track rent payments</p>
             </div>
-            <Link to="/admin">
-              <Button className="gap-2">
-                <Settings className="w-4 h-4" />
-                Admin Dashboard
-              </Button>
-            </Link>
+            <div className="flex gap-1 md:gap-2">
+              <Link to="/guideline">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600 px-2 md:px-3">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Guidelines</span>
+                </Button>
+              </Link>
+              <Link to="/admin">
+                <Button size="sm" className="gap-1.5 px-2 md:px-3">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin Dashboard</span>
+                  <span className="sm:hidden">Admin</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!isConfigured && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-700 font-medium mb-3">
-              ⚠️ Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.
-            </p>
-            <div className="flex gap-2">
-              <Link to="/storage-migration">
-                <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
-                  Setup Storage
-                </Button>
-              </Link>
-              <Link to="/debug">
-                <Button size="sm" variant="outline" className="border-amber-200">
-                  Check Status
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className={`mb-6 p-4 rounded-lg border ${
             isRLSError(error)
@@ -74,16 +62,9 @@ export default function Home() {
                 </p>
                 {isRLSError(error) && (
                   <div className="mt-4 flex gap-2">
-                    <Link to="/rls-fix">
-                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                        View RLS Fix
-                      </Button>
-                    </Link>
-                    <Link to="/debug">
-                      <Button size="sm" variant="outline" className="border-red-200">
-                        Check Status
-                      </Button>
-                    </Link>
+                    <p className="text-sm text-red-700 italic">
+                      Please contact your administrator to configure database security.
+                    </p>
                   </div>
                 )}
               </div>

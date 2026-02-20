@@ -48,16 +48,31 @@ export const handleDocumentUpload: RequestHandler = async (req, res) => {
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.VITE_SUPABASE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl) {
+      return res.status(500).json({
+        error: "Server misconfiguration",
+        message: "Missing VITE_SUPABASE_URL",
+      });
+    }
+
+    // Use service key if available, otherwise fallback to anon key
+    const clientKey = supabaseServiceKey || supabaseAnonKey;
+
+    if (!clientKey) {
       return res.status(500).json({
         error: "Server misconfiguration",
         message: "Missing SUPABASE credentials",
       });
     }
 
-    // Create admin client with service role key (bypasses RLS)
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    if (!supabaseServiceKey) {
+      console.warn("Using anon key for upload. Ensure RLS policies are set for bucket 'tenancy_documents'.");
+    }
+
+    // Create client (uses service role key to bypass RLS if available)
+    const supabaseClient = createClient(supabaseUrl, clientKey);
 
     // Create unique file path
     const fileExt = fileName.split(".").pop();
@@ -73,7 +88,7 @@ export const handleDocumentUpload: RequestHandler = async (req, res) => {
 
     // Upload file to storage bucket
     const { error: uploadError, data: uploadData } =
-      await supabaseAdmin.storage
+      await supabaseClient.storage
         .from(BUCKET_NAME)
         .upload(filePath, fileBuffer, {
           contentType,
@@ -90,7 +105,7 @@ export const handleDocumentUpload: RequestHandler = async (req, res) => {
 
     // Get signed URL for download (1 hour expiration)
     const { data: signedUrlData, error: signedUrlError } =
-      await supabaseAdmin.storage
+      await supabaseClient.storage
         .from(BUCKET_NAME)
         .createSignedUrl(filePath, 3600); // 3600 seconds = 1 hour
 
@@ -139,17 +154,25 @@ export const handleRefreshSignedUrl: RequestHandler = async (req, res) => {
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.VITE_SUPABASE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl) {
       return res.status(500).json({
         error: "Server misconfiguration",
       });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const clientKey = supabaseServiceKey || supabaseAnonKey;
+    if (!clientKey) {
+      return res.status(500).json({
+        error: "Missing credentials",
+      });
+    }
+
+    const supabaseClient = createClient(supabaseUrl, clientKey);
 
     const { data: signedUrlData, error: signedUrlError } =
-      await supabaseAdmin.storage
+      await supabaseClient.storage
         .from(BUCKET_NAME)
         .createSignedUrl(filePath, 3600); // 1 hour expiration
 

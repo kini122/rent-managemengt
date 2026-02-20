@@ -6,9 +6,13 @@ import { useState } from "react";
 import { Loader2, Edit2, Check, X } from "lucide-react";
 import { updateRentPayment } from "@/services/supabaseAdmin";
 import { toast } from "sonner";
+import { generateAndSendReceipt } from "@/services/receiptService";
+import type { Property, Tenancy, Tenant } from "@/types/index";
 
 export interface RentTableProps {
   payments: RentPayment[];
+  property?: Property;
+  tenancy?: Tenancy & { tenant: Tenant };
   onUpdateStatus?: (
     rentId: number,
     status: "paid" | "pending" | "partial",
@@ -35,11 +39,14 @@ function getStatusColor(status: string) {
 
 export function RentTable({
   payments,
+  property,
+  tenancy,
   onMarkPaid,
   onRefresh,
   isEditable = false,
 }: RentTableProps) {
   const [loading, setLoading] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<{
     [key: number]: {
@@ -88,12 +95,17 @@ export function RentTable({
         return;
       }
 
-      // Format remarks to include paid amount for partial payments
+      // Format remarks to include paid amount for partial/paid payments
       let finalRemarks = data.remarks;
       if (data.status === "partial" && data.paidAmount) {
         const remaining = payment.rent_amount - data.paidAmount;
         finalRemarks = `Paid: ₹${data.paidAmount.toLocaleString("en-IN")} | Remaining: ₹${remaining.toLocaleString("en-IN")}`;
-        if (data.remarks && data.remarks.trim()) {
+        if (data.remarks && data.remarks.trim() && !data.remarks.includes("Paid: ₹")) {
+          finalRemarks += ` | ${data.remarks}`;
+        }
+      } else if (data.status === "paid") {
+        finalRemarks = `Paid: ₹${payment.rent_amount.toLocaleString("en-IN")} | Remaining: ₹0`;
+        if (data.remarks && data.remarks.trim() && !data.remarks.includes("Paid: ₹")) {
           finalRemarks += ` | ${data.remarks}`;
         }
       }
@@ -124,6 +136,29 @@ export function RentTable({
       await onRefresh?.();
     } finally {
       setLoading(null);
+    }
+  };
+
+  const handleSendReceipt = async (payment: RentPayment) => {
+    if (!property || !tenancy) {
+      toast.error("Property or Tenancy details missing");
+      return;
+    }
+
+    try {
+      setIsGenerating(payment.rent_id);
+      const whatsappUrl = await generateAndSendReceipt(
+        property,
+        tenancy.tenant,
+        tenancy,
+        payment
+      );
+      window.open(whatsappUrl, "_blank");
+      toast.success("Receipt generated and WhatsApp message prepared");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate receipt");
+    } finally {
+      setIsGenerating(null);
     }
   };
 
@@ -371,6 +406,24 @@ export function RentTable({
                             )}
                           </Button>
                         )}
+                        {isEditable && payment.payment_status === "paid" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSendReceipt(payment)}
+                            disabled={isGenerating === payment.rent_id}
+                            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                          >
+                            {isGenerating === payment.rent_id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              "Send Receipt"
+                            )}
+                          </Button>
+                        )}
                       </>
                     )}
                   </td>
@@ -400,6 +453,14 @@ export function RentTable({
 
           const isEditing = editingId === payment.rent_id;
 
+          let outstandingAmount = payment.rent_amount;
+          if (payment.payment_status === "partial" && payment.remarks) {
+            const match = payment.remarks.match(/Remaining:\s*₹?([\d,]+)/);
+            if (match) {
+              outstandingAmount = parseInt(match[1].replace(/,/g, ""), 10);
+            }
+          }
+
           return (
             <div key={payment.rent_id} className="p-4 space-y-3">
               <div className="flex items-start justify-between">
@@ -409,54 +470,131 @@ export function RentTable({
                     ₹{payment.rent_amount.toLocaleString("en-IN")}
                   </p>
                 </div>
-                <span
-                  className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
-                    statusColor.bg,
-                    statusColor.text,
+                <div className="flex flex-col items-end gap-2">
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap capitalize",
+                      statusColor.bg,
+                      statusColor.text,
+                    )}
+                  >
+                    {payment.payment_status}
+                  </span>
+                  {payment.payment_status === "partial" && (
+                    <span className="text-xs font-bold text-red-600">
+                      Pending: ₹{outstandingAmount.toLocaleString("en-IN")}
+                    </span>
                   )}
-                >
-                  {payment.payment_status}
-                </span>
+                </div>
               </div>
 
-              {isEditing && editData[payment.rent_id]?.status === "partial" && (
-                <div className="text-xs space-y-2">
-                  <label className="block font-medium text-slate-700">
-                    Paid Amount (₹)
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={editData[payment.rent_id]?.paidAmount || ""}
-                    onChange={(e) => {
-                      const amount = e.target.value ? parseInt(e.target.value) : 0;
-                      setEditData({
-                        ...editData,
-                        [payment.rent_id]: {
-                          ...editData[payment.rent_id],
-                          paidAmount: amount,
-                        },
-                      });
-                    }}
-                    className="w-full text-sm"
-                    max={payment.rent_amount}
-                  />
+              {isEditing && (
+                <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Status</label>
+                    <select
+                      value={editData[payment.rent_id]?.status || payment.payment_status}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          [payment.rent_id]: {
+                            ...editData[payment.rent_id],
+                            status: e.target.value as "paid" | "pending" | "partial",
+                          },
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="partial">Partial</option>
+                    </select>
+                  </div>
+
+                  {editData[payment.rent_id]?.status === "partial" && (
+                    <div className="text-xs space-y-2">
+                      <label className="block font-medium text-slate-700">
+                        Paid Amount (₹)
+                      </label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={editData[payment.rent_id]?.paidAmount || ""}
+                        onChange={(e) => {
+                          const amount = e.target.value ? parseInt(e.target.value) : 0;
+                          setEditData({
+                            ...editData,
+                            [payment.rent_id]: {
+                              ...editData[payment.rent_id],
+                              paidAmount: amount,
+                            },
+                          });
+                        }}
+                        className="w-full text-sm"
+                        max={payment.rent_amount}
+                      />
+                      {editData[payment.rent_id]?.paidAmount ? (
+                        <div className="text-slate-600 bg-white p-2 rounded border border-slate-100">
+                          <div>Paid: ₹{editData[payment.rent_id].paidAmount?.toLocaleString("en-IN")}</div>
+                          <div>Remaining: ₹{(payment.rent_amount - (editData[payment.rent_id].paidAmount || 0)).toLocaleString("en-IN")}</div>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Paid Date</label>
+                    <Input
+                      type="date"
+                      value={editData[payment.rent_id]?.paid_date || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          [payment.rent_id]: {
+                            ...editData[payment.rent_id],
+                            paid_date: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Remarks</label>
+                    <Input
+                      type="text"
+                      placeholder="Add remarks..."
+                      value={editData[payment.rent_id]?.remarks || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          [payment.rent_id]: {
+                            ...editData[payment.rent_id],
+                            remarks: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full text-sm"
+                    />
+                  </div>
                 </div>
               )}
 
-              <div className="text-xs space-y-2 border-t border-slate-200 pt-3">
-                <div>
-                  <p className="text-slate-500 font-medium">Paid Date</p>
-                  <p className="text-slate-900">{paidDateStr}</p>
-                </div>
-                {payment.remarks && (
+              {!isEditing && (
+                <div className="text-xs space-y-2 border-t border-slate-200 pt-3">
                   <div>
-                    <p className="text-slate-500 font-medium">Notes</p>
-                    <p className="text-slate-900 line-clamp-2">{payment.remarks}</p>
+                    <p className="text-slate-500 font-medium">Paid Date</p>
+                    <p className="text-slate-900">{paidDateStr}</p>
                   </div>
-                )}
-              </div>
+                  {payment.remarks && (
+                    <div>
+                      <p className="text-slate-500 font-medium">Notes</p>
+                      <p className="text-slate-900 line-clamp-2">{payment.remarks}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2 pt-2 border-t border-slate-200">
                 {isEditing ? (
@@ -508,6 +646,24 @@ export function RentTable({
                           </>
                         ) : (
                           <span className="text-xs">Mark Paid</span>
+                        )}
+                      </Button>
+                    )}
+                    {isEditable && payment.payment_status === "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSendReceipt(payment)}
+                        disabled={isGenerating === payment.rent_id}
+                        className="flex-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      >
+                        {isGenerating === payment.rent_id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <span className="text-xs">Generating...</span>
+                          </>
+                        ) : (
+                          <span className="text-xs">Send Receipt</span>
                         )}
                       </Button>
                     )}

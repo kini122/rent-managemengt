@@ -73,18 +73,24 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Properties
-          </Button>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Property Details
-          </h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-bold text-slate-900 truncate">
+                Property Details
+              </h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="whitespace-nowrap"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Back to Properties</span>
+              <span className="sm:hidden">Back</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -95,12 +101,29 @@ export default function PropertyDetail() {
           <TenantSummary
             property={property}
             tenancy={tenancy}
+            rentPayments={rentPayments}
+            onEdit={refetch}
             onCreateTenancy={() => setShowTenancyModal(true)}
             onTenancyEnded={() => {
               refetch();
               toast.success("Tenancy has been ended");
             }}
           />
+
+          {/* Bottom Half: Rent Payments Table */}
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-4">
+              Rent Payment History
+            </h2>
+            <RentTable
+              payments={rentPayments}
+              property={property}
+              tenancy={tenancy || undefined}
+              onMarkPaid={handleMarkRentAsPaid}
+              onRefresh={refetch}
+              isEditable={true}
+            />
+          </div>
 
           {/* Pending & Partial Rent Details */}
           <PendingRentDetails
@@ -110,21 +133,8 @@ export default function PropertyDetail() {
             propertyAddress={property.address}
           />
 
-          {/* Tenancy Documents */}
+          {/* Tenancy Documents - MOVED TO LAST */}
           {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} />}
-
-          {/* Bottom Half: Rent Payments Table */}
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              Rent Payment History
-            </h2>
-            <RentTable
-              payments={rentPayments}
-              onMarkPaid={handleMarkRentAsPaid}
-              onRefresh={refetch}
-              isEditable={true}
-            />
-          </div>
         </div>
 
         {/* Create Tenancy Modal */}

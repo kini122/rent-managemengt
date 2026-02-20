@@ -4,8 +4,10 @@ import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X } from 'lucide-react';
+import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
+import { generateGlobalReport, ReportType } from '@/services/reportGenerator';
+import { toast } from 'sonner';
 
 interface PendingRentRow {
   property: Property;
@@ -31,6 +33,21 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGlobalReport = async (type: ReportType, year?: number, month?: number) => {
+    try {
+      setGeneratingReport(true);
+      await generateGlobalReport(type, year, month);
+      toast.success('Report generated successfully');
+      setReportModalOpen(false);
+    } catch (err) {
+      toast.error('Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -41,17 +58,46 @@ export default function AdminDashboard() {
         const dashboardMetrics = await getDashboardMetrics();
         setMetrics(dashboardMetrics);
 
-        // Get all properties with occupancy status
+        // Fix "345 rr" inactive status if it has an active tenancy
+        const { data: inactive345rr } = await supabase
+          .from('properties')
+          .select('property_id')
+          .ilike('address', '%345 rr%')
+          .eq('is_active', false)
+          .single();
+
+        if (inactive345rr) {
+          const { data: tenancy345rr } = await supabase
+            .from('tenancies')
+            .select('tenancy_id')
+            .eq('property_id', inactive345rr.property_id)
+            .is('end_date', null)
+            .single();
+
+          if (tenancy345rr) {
+            await supabase
+              .from('properties')
+              .update({ is_active: true })
+              .eq('property_id', inactive345rr.property_id);
+            // Refetch metrics after fix
+            const fixedMetrics = await getDashboardMetrics();
+            setMetrics(fixedMetrics);
+          }
+        }
+
+        // Get all active properties with occupancy status
         const { data: propertiesData } = await supabase
           .from('properties')
           .select('*')
+          .eq('is_active', true)
           .order('property_id', { ascending: false });
 
         if (propertiesData) {
           const { data: tenancies } = await supabase
             .from('tenancies')
-            .select('property_id')
-            .is('end_date', null);
+            .select('property_id, properties!inner(is_active)')
+            .is('end_date', null)
+            .eq('properties.is_active', true);
 
           const occupiedIds = new Set(tenancies?.map(t => t.property_id) || []);
 
@@ -160,14 +206,17 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-              <p className="text-slate-600 mt-1">Manage properties, tenants, and rent payments</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-bold text-slate-900 truncate">Admin Dashboard</h1>
+              <p className="hidden md:block text-slate-600 mt-1">Manage properties, tenants, and rent payments</p>
             </div>
             <Link to="/">
-              <Button variant="outline">Back to Properties</Button>
+              <Button variant="outline" size="sm" className="whitespace-nowrap">
+                <span className="hidden sm:inline">Back to Properties</span>
+                <span className="sm:hidden">Back</span>
+              </Button>
             </Link>
           </div>
         </div>
@@ -182,14 +231,29 @@ export default function AdminDashboard() {
         )}
 
         {/* Quick Actions */}
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-4">Management</h2>
-          <Link to="/admin/properties">
-            <Button className="gap-2">
-              <Settings className="w-4 h-4" />
-              Manage Properties
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-4">
+            <Link to="/admin/properties">
+              <Button className="gap-2">
+                <Settings className="w-4 h-4" />
+                Manage Properties
+              </Button>
+            </Link>
+            <Link to="/guideline">
+              <Button variant="outline" className="gap-2">
+                <BookOpen className="w-4 h-4" />
+                App Guidelines
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
+              onClick={() => setReportModalOpen(true)}
+            >
+              <FileText className="w-4 h-4" />
+              Generate Report
             </Button>
-          </Link>
+          </div>
         </div>
 
         {/* Metrics Grid - Clickable */}
@@ -337,15 +401,17 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title="All Properties">
           <div className="space-y-2">
             {propertiesData.map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50">
-                <div>
-                  <p className="font-medium text-slate-900 truncate">{p.address}</p>
-                  <p className="text-xs text-slate-500">{p.details ? p.details.substring(0, 40) : 'No details'}</p>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50 mb-2">
+                  <div>
+                    <p className="font-medium text-slate-900 truncate">{p.address}</p>
+                    <p className="text-xs text-slate-500">{p.details ? p.details.substring(0, 40) : 'No details'}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${p.occupied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {p.occupied ? 'Occupied' : 'Vacant'}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${p.occupied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                  {p.occupied ? 'Occupied' : 'Vacant'}
-                </span>
-              </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -356,10 +422,12 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`Occupied Properties (${metrics.occupiedProperties})`}>
           <div className="space-y-2">
             {propertiesData.filter(p => p.occupied).map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{p.address}</p>
-                <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
-              </div>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{p.address}</p>
+                  <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -370,10 +438,12 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`Vacant Properties (${metrics.vacantProperties})`}>
           <div className="space-y-2">
             {propertiesData.filter(p => !p.occupied).map(p => (
-              <div key={p.property_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{p.address}</p>
-                <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
-              </div>
+              <Link key={p.property_id} to={`/property/${p.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{p.address}</p>
+                  <p className="text-xs text-slate-500 mt-1">{p.details || 'No details'}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>
@@ -384,14 +454,147 @@ export default function AdminDashboard() {
         <Modal onClose={() => setActiveModal(null)} title={`All Tenants (${metrics.totalTenants})`}>
           <div className="space-y-2">
             {pendingRents.map(row => (
-              <div key={row.tenant.tenant_id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <p className="font-medium text-slate-900">{row.tenant.name}</p>
-                <p className="text-xs text-slate-500 mt-1">{row.property.address}</p>
-              </div>
+              <Link key={row.tenant.tenant_id} to={`/property/${row.property.property_id}`}>
+                <div className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 mb-2">
+                  <p className="font-medium text-slate-900">{row.tenant.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">{row.property.address}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </Modal>
       )}
+
+      {/* Global Report Modal */}
+      {reportModalOpen && (
+        <ReportSelectionModal
+          onClose={() => setReportModalOpen(false)}
+          onSelect={handleGlobalReport}
+          loading={generatingReport}
+        />
+      )}
+    </div>
+  );
+}
+
+// Report Selection Modal
+function ReportSelectionModal({
+  onClose,
+  onSelect,
+  loading
+}: {
+  onClose: () => void;
+  onSelect: (type: ReportType, year?: number, month?: number) => void;
+  loading: boolean;
+}) {
+  const years = [2024, 2025, 2026];
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <FileText className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Generate Report</h2>
+              <p className="text-sm text-slate-500">Select the type of report you need</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Full Report Option */}
+          <button
+            onClick={() => onSelect('full')}
+            disabled={loading}
+            className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all group disabled:opacity-50"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 flex items-center justify-center group-hover:border-emerald-200 group-hover:bg-emerald-50 transition-colors">
+                <FileText className="w-6 h-6 text-slate-400 group-hover:text-emerald-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-slate-900">Full System Report</p>
+                <p className="text-xs text-slate-500">All properties, tenants, and full rent history</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500" />
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-slate-100"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-slate-400">Time-filtered Reports</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase px-1">Select Year</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase px-1">Select Month</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-2">
+            <Button
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-11"
+              disabled={loading}
+              onClick={() => onSelect('yearly', selectedYear)}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+              Yearly ({selectedYear})
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-11"
+              disabled={loading}
+              onClick={() => onSelect('monthly', selectedYear, selectedMonth)}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+              {months[selectedMonth]}
+            </Button>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="bg-emerald-50 p-4 border-t border-emerald-100">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+              <p className="text-sm font-medium text-emerald-800">Compiling data and generating Excel...</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

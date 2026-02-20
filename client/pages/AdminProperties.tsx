@@ -72,16 +72,23 @@ export default function AdminProperties() {
 
     try {
       setDeleting(id);
-      await deleteProperty(id);
-      toast.success('Property deleted successfully');
+      const result = await deleteProperty(id);
+      if (result?.softDelete) {
+        toast.success('Property deactivated and tenancy ended. History preserved in "Ended Tenancies".');
+      } else {
+        toast.success('Property deleted successfully');
+      }
       await fetchProperties();
     } catch (err) {
+      console.error('Delete error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete property';
-      // Check for foreign key constraint errors
+
       if (errorMsg.includes('violates foreign key') || errorMsg.includes('constraint')) {
-        toast.error('Cannot delete property. It has active tenancies or other dependencies. End all tenancies first.');
+        toast.error('Cannot delete property due to database constraints. The system tried to clean up dependencies but failed. Please check your database setup.');
+      } else if (errorMsg.toLowerCase().includes('row level security') || errorMsg.toLowerCase().includes('policy')) {
+        toast.error('Permission denied. Your database security (RLS) is preventing this deletion. Please ensure RLS is disabled or you have proper delete policies.');
       } else {
-        toast.error(errorMsg);
+        toast.error(`Delete failed: ${errorMsg}`);
       }
     } finally {
       setDeleting(null);
@@ -92,21 +99,21 @@ export default function AdminProperties() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Properties Management</h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-bold text-slate-900 truncate">Properties</h1>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Link to="/admin" className="flex-1 sm:flex-initial">
-                <Button variant="outline" className="w-full sm:w-auto">
-                  Back to Dashboard
+            <div className="flex gap-1 md:gap-2">
+              <Link to="/admin">
+                <Button variant="outline" size="sm" className="whitespace-nowrap px-2 md:px-4">
+                  <span className="hidden sm:inline">Back to Dashboard</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
-              <Button onClick={() => setShowForm(true)} className="flex-1 sm:flex-initial gap-2">
+              <Button onClick={() => setShowForm(true)} size="sm" className="gap-1.5 whitespace-nowrap px-2 md:px-4">
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Property</span>
-                <span className="sm:hidden">Add</span>
+                <span>Add Property</span>
               </Button>
             </div>
           </div>
