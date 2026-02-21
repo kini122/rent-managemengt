@@ -9,6 +9,7 @@ export function useProperties() {
 
   const fetchProperties = async () => {
     try {
+      console.log('[useProperties] Starting fetch...');
       setLoading(true);
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
@@ -16,7 +17,12 @@ export function useProperties() {
         .eq('is_active', true)
         .order('property_id', { ascending: false });
 
-      if (propertiesError) throw propertiesError;
+      if (propertiesError) {
+        console.error('[useProperties] Error fetching properties:', propertiesError);
+        throw propertiesError;
+      }
+
+      console.log('[useProperties] Fetched', propertiesData?.length || 0, 'properties');
 
       const enrichedProperties: PropertyWithTenant[] = await Promise.all(
         (propertiesData || []).map(async (property) => {
@@ -49,8 +55,11 @@ export function useProperties() {
 
       setProperties(enrichedProperties);
       setError(null);
+      console.log('[useProperties] Fetch completed successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch properties');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
+      console.error('[useProperties] Error:', errorMessage, err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -72,6 +81,7 @@ export function usePropertyDetail(propertyId: number) {
 
   const fetchData = async () => {
     try {
+      console.log('[usePropertyDetail] Starting fetch for property', propertyId);
       setLoading(true);
       const { data: propertyData, error: propertyError } = await supabase
         .from('properties')
@@ -79,7 +89,10 @@ export function usePropertyDetail(propertyId: number) {
         .eq('property_id', propertyId)
         .single();
 
-      if (propertyError) throw propertyError;
+      if (propertyError) {
+        console.error('[usePropertyDetail] Error fetching property:', propertyError);
+        throw propertyError;
+      }
       setProperty(propertyData);
 
       const { data: tenancyData, error: tenancyError } = await supabase

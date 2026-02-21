@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { getDashboardMetrics } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
+import { LandlordProfileModal } from '@/components/LandlordProfileModal';
+import { ViewReceiptsModal } from '@/components/ViewReceiptsModal';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react';
+import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar, Building2, Receipt, AlertCircle, CheckCircle } from 'lucide-react';
 import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
 import { generateGlobalReport, ReportType } from '@/services/reportGenerator';
 import { toast } from 'sonner';
@@ -35,6 +37,8 @@ export default function AdminDashboard() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [landlordProfileOpen, setLandlordProfileOpen] = useState(false);
+  const [viewReceiptsOpen, setViewReceiptsOpen] = useState(false);
 
   const handleGlobalReport = async (type: ReportType, year?: number, month?: number) => {
     try {
@@ -52,6 +56,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        console.log('[AdminDashboard] Starting fetch...');
         setLoading(true);
 
         // Get metrics
@@ -181,8 +186,11 @@ export default function AdminDashboard() {
 
         setPendingRents(formattedData);
         setError(null);
+        console.log('[AdminDashboard] Fetch completed successfully');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard';
+        console.error('[AdminDashboard] Error:', errorMessage, err);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -253,6 +261,22 @@ export default function AdminDashboard() {
               <FileText className="w-4 h-4" />
               Generate Report
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+              onClick={() => setViewReceiptsOpen(true)}
+            >
+              <Receipt className="w-4 h-4" />
+              View Receipts
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
+              onClick={() => setLandlordProfileOpen(true)}
+            >
+              <Building2 className="w-4 h-4" />
+              Landlord Profile
+            </Button>
           </div>
         </div>
 
@@ -306,6 +330,88 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Property Cards with Tenant Status */}
+        {propertiesData.filter(p => p.occupied).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Properties Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(() => {
+                // Group pending rents by property
+                const propertyMap = new Map<number, PendingRentRow[]>();
+
+                pendingRents.forEach(row => {
+                  if (!propertyMap.has(row.property.property_id)) {
+                    propertyMap.set(row.property.property_id, []);
+                  }
+                  propertyMap.get(row.property.property_id)!.push(row);
+                });
+
+                // Get occupied properties and sort by property_id (newest first)
+                const occupiedProperties = propertiesData
+                  .filter(p => p.occupied)
+                  .sort((a, b) => b.property_id - a.property_id);
+
+                // Create property cards for occupied properties
+                const propertyCards = occupiedProperties.map((property) => {
+                  const rentRows = propertyMap.get(property.property_id) || [];
+                  const tenant = rentRows[0]?.tenant;
+                  const pendingCount = rentRows.length;
+                  const allPaid = pendingCount === 0;
+
+                  return (
+                    <Link key={property.property_id} to={`/property/${property.property_id}`}>
+                      <div className="bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-lg transition-all p-4 cursor-pointer">
+                        {/* Header with Property Number */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="text-xs text-slate-500 uppercase font-semibold">Property</p>
+                            <p className="text-lg font-bold text-slate-900">{property.address}</p>
+                          </div>
+                          {allPaid ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                          )}
+                        </div>
+
+                        {/* Property Type/Details */}
+                        <p className="text-sm text-slate-600 mb-3">
+                          {property.details || 'No details'}
+                        </p>
+
+                        {/* Tenant Info */}
+                        {tenant && (
+                          <div className="mb-3 p-3 bg-slate-50 rounded-lg">
+                            <p className="text-xs text-slate-500 font-semibold mb-1">Current Tenant</p>
+                            <p className="text-sm font-medium text-slate-900">{tenant.name}</p>
+                          </div>
+                        )}
+
+                        {/* Payment Status */}
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                          {allPaid ? (
+                            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                              <CheckCircle className="w-4 h-4" />
+                              All Paid
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-xs font-semibold text-red-700">
+                              <AlertCircle className="w-4 h-4" />
+                              {pendingCount} Pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                });
+
+                return propertyCards;
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Pending Rents Table - Responsive */}
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden mb-8">
@@ -472,6 +578,16 @@ export default function AdminDashboard() {
           onSelect={handleGlobalReport}
           loading={generatingReport}
         />
+      )}
+
+      {/* Landlord Profile Modal */}
+      {landlordProfileOpen && (
+        <LandlordProfileModal onClose={() => setLandlordProfileOpen(false)} />
+      )}
+
+      {/* View Receipts Modal */}
+      {viewReceiptsOpen && (
+        <ViewReceiptsModal onClose={() => setViewReceiptsOpen(false)} />
       )}
     </div>
   );
