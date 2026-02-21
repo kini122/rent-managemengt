@@ -56,6 +56,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        console.log('[AdminDashboard] Starting fetch...');
         setLoading(true);
 
         // Get metrics
@@ -185,8 +186,11 @@ export default function AdminDashboard() {
 
         setPendingRents(formattedData);
         setError(null);
+        console.log('[AdminDashboard] Fetch completed successfully');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard';
+        console.error('[AdminDashboard] Error:', errorMessage, err);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
