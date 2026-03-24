@@ -155,6 +155,7 @@ export function RentTable({
       );
       window.open(whatsappUrl, "_blank");
       toast.success("Receipt generated and WhatsApp message prepared");
+      await onRefresh?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to generate receipt");
     } finally {

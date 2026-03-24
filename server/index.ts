@@ -4,6 +4,7 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleInitStorage } from "./routes/init-storage";
 import { handleDocumentUpload, handleRefreshSignedUrl } from "./routes/document-upload";
+import { handleDownload } from "./routes/download";
 
 export function createServer() {
   const app = express();
@@ -23,6 +24,9 @@ export function createServer() {
 
   // Storage initialization route
   app.post("/api/init-storage", handleInitStorage);
+
+  // Reliable file download proxy
+  app.post("/api/download", handleDownload);
 
   // Document upload routes
   app.post("/api/documents/upload", handleDocumentUpload);

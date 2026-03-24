@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 export interface PropertyCardProps {
   property: PropertyWithTenant;
+  onClick?: (property: PropertyWithTenant) => void;
 }
 
 function getStatusColor(pendingCount: number) {
@@ -12,13 +13,12 @@ function getStatusColor(pendingCount: number) {
   return { bg: 'bg-red-100', text: 'text-red-700', badge: 'bg-red-500' };
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const tenantName = property.tenancy?.tenant?.name || 'Vacant';
   const statusColor = getStatusColor(property.pending_count);
   const isTenantOccupied = !!property.tenancy;
 
-  return (
-    <Link to={`/property/${property.property_id}`}>
+  const cardContent = (
       <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer h-full flex flex-col">
         {/* Header with Address and Status Badge */}
         <div className="flex items-start justify-between mb-4 gap-3">
@@ -70,11 +70,35 @@ export function PropertyCard({ property }: PropertyCardProps) {
             {property.pending_count === 0 && isTenantOccupied
               ? '✓ All Paid'
               : property.pending_count > 0
-                ? `⚠ ${property.pending_count} Pending`
+                ? `⚠ ${property.pending_count} Pending${
+                    property.pending_months && property.pending_months.length > 0
+                      ? ` (${property.pending_months.map((m) => {
+                          if (!m || !m.includes('-')) return m;
+                          const [year, month] = m.split('-');
+                          return new Date(parseInt(year), parseInt(month) - 1).toLocaleString(
+                            'en-GB',
+                            { month: 'short', year: '2-digit' }
+                          );
+                        }).join(', ')})`
+                      : ''
+                  }`
                 : '○ Vacant'}
           </div>
         </div>
       </div>
+  );
+
+  if (onClick) {
+    return (
+      <div onClick={() => onClick(property)} className="h-full block">
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/property/${property.property_id}`} className="h-full block">
+      {cardContent}
     </Link>
   );
 }

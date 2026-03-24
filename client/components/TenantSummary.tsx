@@ -280,8 +280,39 @@ export function TenantSummary({
       // Generate filename
       const fileName = `${property.address.replace(/[/\\?%*:|"<>]/g, "-")}_Report.xlsx`;
 
-      // Export file
-      XLSX.writeFile(wb, fileName);
+      // Use server proxy for completely reliable file naming on mobile / PWA browsers
+      const base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/download';
+      form.target = '_blank';
+      
+      const inputBase64 = document.createElement('input');
+      inputBase64.type = 'hidden';
+      inputBase64.name = 'base64';
+      inputBase64.value = base64Data;
+      form.appendChild(inputBase64);
+
+      const inputFilename = document.createElement('input');
+      inputFilename.type = 'hidden';
+      inputFilename.name = 'filename';
+      inputFilename.value = fileName;
+      form.appendChild(inputFilename);
+
+      const inputCt = document.createElement('input');
+      inputCt.type = 'hidden';
+      inputCt.name = 'contentType';
+      inputCt.value = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      form.appendChild(inputCt);
+
+      document.body.appendChild(form);
+      form.submit();
+      
+      setTimeout(() => {
+        if (document.body.contains(form)) document.body.removeChild(form);
+      }, 1000);
+      
       toast.success("Final redesigned report generated");
     } catch (err) {
       console.error("Report generation error:", err);

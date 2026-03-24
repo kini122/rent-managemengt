@@ -200,8 +200,39 @@ export async function generateGlobalReport(type: ReportType, year?: number, mont
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
     const fileName = `${reportTitle.replace(/\s+/g, '_')}_EXHAUSTIVE_${timestamp}.xlsx`;
 
-    // Write file
-    XLSX.writeFile(wb, fileName);
+    // Use server proxy for completely reliable file naming on mobile / PWA browsers
+    const base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/download';
+    form.target = '_blank'; // Opens empty page on some envs but keeps app responsive while DL starts
+    
+    const inputBase64 = document.createElement('input');
+    inputBase64.type = 'hidden';
+    inputBase64.name = 'base64';
+    inputBase64.value = base64Data;
+    form.appendChild(inputBase64);
+
+    const inputFilename = document.createElement('input');
+    inputFilename.type = 'hidden';
+    inputFilename.name = 'filename';
+    inputFilename.value = fileName;
+    form.appendChild(inputFilename);
+
+    const inputCt = document.createElement('input');
+    inputCt.type = 'hidden';
+    inputCt.name = 'contentType';
+    inputCt.value = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    form.appendChild(inputCt);
+
+    document.body.appendChild(form);
+    form.submit();
+    
+    setTimeout(() => {
+      if (document.body.contains(form)) document.body.removeChild(form);
+    }, 1000);
+    
     return true;
   } catch (err) {
     console.error('Exhaustive report generation error:', err);

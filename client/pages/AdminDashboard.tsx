@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { getDashboardMetrics } from '@/services/supabaseAdmin';
+import { getDashboardMetrics, ensureCurrentRentPayments } from '@/services/supabaseAdmin';
 import { EndedTenanciesTable } from '@/components/EndedTenanciesTable';
+import { LandlordProfileModal } from '@/components/LandlordProfileModal';
+import { ViewReceiptsModal } from '@/components/ViewReceiptsModal';
+import { PropertyCard } from '@/components/PropertyCard';
 import { Button } from '@/components/ui/button';
-import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react';
-import type { Property, RentPayment, Tenancy, Tenant } from '@/types/index';
+import { Loader2, Settings, X, BookOpen, FileText, ChevronRight, Calendar, Building2, Receipt, AlertCircle, CheckCircle } from 'lucide-react';
+import type { Property, RentPayment, Tenancy, Tenant, PropertyWithTenant } from '@/types/index';
 import { generateGlobalReport, ReportType } from '@/services/reportGenerator';
 import { toast } from 'sonner';
 
@@ -30,11 +33,14 @@ export default function AdminDashboard() {
   });
   const [pendingRents, setPendingRents] = useState<PendingRentRow[]>([]);
   const [propertiesData, setPropertiesData] = useState<PropertyWithStatus[]>([]);
+  const [tenancyMap, setTenancyMap] = useState<Map<number, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [landlordProfileOpen, setLandlordProfileOpen] = useState(false);
+  const [viewReceiptsOpen, setViewReceiptsOpen] = useState(false);
 
   const handleGlobalReport = async (type: ReportType, year?: number, month?: number) => {
     try {
@@ -52,40 +58,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        console.log('[AdminDashboard] Starting fetch...');
         setLoading(true);
 
         // Get metrics
         const dashboardMetrics = await getDashboardMetrics();
         setMetrics(dashboardMetrics);
 
-        // Fix "345 rr" inactive status if it has an active tenancy
-        const { data: inactive345rr } = await supabase
-          .from('properties')
-          .select('property_id')
-          .ilike('address', '%345 rr%')
-          .eq('is_active', false)
-          .single();
 
-        if (inactive345rr) {
-          const { data: tenancy345rr } = await supabase
-            .from('tenancies')
-            .select('tenancy_id')
-            .eq('property_id', inactive345rr.property_id)
-            .is('end_date', null)
-            .single();
-
-          if (tenancy345rr) {
-            await supabase
-              .from('properties')
-              .update({ is_active: true })
-              .eq('property_id', inactive345rr.property_id);
-            // Refetch metrics after fix
-            const fixedMetrics = await getDashboardMetrics();
-            setMetrics(fixedMetrics);
-          }
-        }
-
-        // Get all active properties with occupancy status
         const { data: propertiesData } = await supabase
           .from('properties')
           .select('*')
@@ -95,11 +75,32 @@ export default function AdminDashboard() {
         if (propertiesData) {
           const { data: tenancies } = await supabase
             .from('tenancies')
-            .select('property_id, properties!inner(is_active)')
+            .select('property_id, tenancy_id, tenant_id, start_date, end_date, monthly_rent, advance_amount, status, created_at, properties!inner(is_active), tenants!inner(tenant_id, name, phone, id_proof, notes, created_at)')
             .is('end_date', null)
             .eq('properties.is_active', true);
 
           const occupiedIds = new Set(tenancies?.map(t => t.property_id) || []);
+
+          // Build a map of property_id -> tenancy with tenant info
+          const tenancyMap = new Map<number, any>();
+          
+          if (tenancies) {
+            await Promise.all(tenancies.map(async (t) => {
+              tenancyMap.set(t.property_id, t);
+              
+              // Dynamically ensure rent payments exist for all due months
+              try {
+                await ensureCurrentRentPayments(
+                  t.tenancy_id,
+                  t.start_date,
+                  t.monthly_rent,
+                  t.end_date,
+                );
+              } catch (err) {
+                console.warn('[AdminDashboard] Failed to sync rent payments for tenancy', t.tenancy_id, err);
+              }
+            }));
+          }
 
           setPropertiesData(
             propertiesData.map(p => ({
@@ -107,6 +108,9 @@ export default function AdminDashboard() {
               occupied: occupiedIds.has(p.property_id),
             }))
           );
+
+          // Store tenancy map for use in rendering
+          setTenancyMap(tenancyMap);
         }
 
         // Get pending rents with property and tenant details
@@ -181,8 +185,11 @@ export default function AdminDashboard() {
 
         setPendingRents(formattedData);
         setError(null);
+        console.log('[AdminDashboard] Fetch completed successfully');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard';
+        console.error('[AdminDashboard] Error:', errorMessage, err);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -231,33 +238,49 @@ export default function AdminDashboard() {
         )}
 
         {/* Quick Actions */}
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4">
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4 md:p-6">
+          <div className="flex flex-wrap gap-2 md:gap-4">
             <Link to="/admin/properties">
-              <Button className="gap-2">
-                <Settings className="w-4 h-4" />
+              <Button className="gap-2 text-xs md:text-sm h-8 md:h-10">
+                <Settings className="w-3 h-3 md:w-4 md:h-4" />
                 Manage Properties
               </Button>
             </Link>
             <Link to="/guideline">
-              <Button variant="outline" className="gap-2">
-                <BookOpen className="w-4 h-4" />
-                App Guidelines
+              <Button variant="outline" className="gap-2 text-xs md:text-sm h-8 md:h-10">
+                <BookOpen className="w-3 h-3 md:w-4 md:h-4" />
+                Guidelines
               </Button>
             </Link>
             <Button
               variant="outline"
-              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
+              className="gap-2 text-xs md:text-sm h-8 md:h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
               onClick={() => setReportModalOpen(true)}
             >
-              <FileText className="w-4 h-4" />
-              Generate Report
+              <FileText className="w-3 h-3 md:w-4 md:h-4" />
+              Report
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 text-xs md:text-sm h-8 md:h-10 border-blue-200 text-blue-700 hover:bg-blue-50"
+              onClick={() => setViewReceiptsOpen(true)}
+            >
+              <Receipt className="w-3 h-3 md:w-4 md:h-4" />
+              Receipts
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 text-xs md:text-sm h-8 md:h-10 border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={() => setLandlordProfileOpen(true)}
+            >
+              <Building2 className="w-3 h-3 md:w-4 md:h-4" />
+              Profile
             </Button>
           </div>
         </div>
 
-        {/* Metrics Grid - Clickable */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 mb-8">
+        {/* Metrics Grid - 3 columns on mobile, 5 on desktop */}
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 mb-8">
           {/* Total Properties */}
           <button
             onClick={() => setActiveModal('properties')}
@@ -307,7 +330,72 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Pending Rents Table - Responsive */}
+        {/* Property Cards with Tenant Status */}
+        {propertiesData.filter(p => p.occupied).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-4">Properties Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(() => {
+                // Group pending rents by property
+                const propertyMap = new Map<number, PendingRentRow[]>();
+
+                pendingRents.forEach(row => {
+                  if (!propertyMap.has(row.property.property_id)) {
+                    propertyMap.set(row.property.property_id, []);
+                  }
+                  propertyMap.get(row.property.property_id)!.push(row);
+                });
+
+                // Get occupied properties and sort by property_id (newest first)
+                const occupiedProperties = propertiesData
+                  .filter(p => p.occupied)
+                  .sort((a, b) => b.property_id - a.property_id);
+
+                // Transform to PropertyWithTenant shape for PropertyCard
+                return occupiedProperties.map((property) => {
+                  const rentRows = propertyMap.get(property.property_id) || [];
+                  const pendingCount = rentRows.length;
+
+                  // Get tenant from pending rents or from tenancyMap
+                  const activeTenancy = tenancyMap.get(property.property_id);
+                  const tenant = rentRows[0]?.tenant || (activeTenancy?.tenants as Tenant | undefined);
+                  const tenancyData = rentRows[0]?.tenancy || (activeTenancy ? {
+                    tenancy_id: activeTenancy.tenancy_id,
+                    property_id: activeTenancy.property_id,
+                    tenant_id: activeTenancy.tenant_id,
+                    start_date: activeTenancy.start_date,
+                    end_date: activeTenancy.end_date,
+                    monthly_rent: activeTenancy.monthly_rent,
+                    advance_amount: activeTenancy.advance_amount,
+                    status: activeTenancy.status,
+                    created_at: activeTenancy.created_at,
+                  } as Tenancy : undefined);
+
+                  const propertyWithTenant: PropertyWithTenant = {
+                    property_id: property.property_id,
+                    address: property.address,
+                    details: property.details,
+                    is_active: property.is_active,
+                    created_at: property.created_at,
+                    pending_count: pendingCount,
+                    ...(tenant && tenancyData ? {
+                      tenancy: {
+                        ...tenancyData,
+                        tenant,
+                      },
+                    } : {}),
+                  };
+
+                  return (
+                    <PropertyCard key={property.property_id} property={propertyWithTenant} />
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Pending Rents Section - Responsive */}
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden mb-8">
           <div className="px-4 md:px-6 py-4 border-b border-slate-200">
             <h2 className="text-lg md:text-xl font-bold text-slate-900">Pending Rent Payments</h2>
@@ -316,76 +404,83 @@ export default function AdminDashboard() {
           {pendingRents.length === 0 ? (
             <div className="p-6 text-center text-slate-600">All rents are paid! ✓</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Property
-                    </th>
-                    <th className="hidden sm:table-cell px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Tenant
-                    </th>
-                    <th className="hidden md:table-cell px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Month
-                    </th>
-                    <th className="px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Amount
-                    </th>
-                    <th className="hidden sm:table-cell px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Status
-                    </th>
-                    <th className="px-3 md:px-6 py-3 text-left font-semibold text-slate-900">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {pendingRents.map((row) => {
-                    const monthDate = new Date(row.payment.rent_month);
-                    const monthStr = monthDate.toLocaleDateString('en-IN', {
-                      month: 'short',
-                      year: 'numeric',
-                    });
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Property</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Tenant</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Month</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Amount</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Status</th>
+                      <th className="px-6 py-3 text-left font-semibold text-slate-900">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {pendingRents.map((row) => {
+                      const monthStr = new Date(row.payment.rent_month + 'T12:00:00').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                      return (
+                        <tr key={row.payment.rent_id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 font-medium text-slate-900 truncate max-w-[180px]">{row.property.address}</td>
+                          <td className="px-6 py-4 text-slate-600">{row.tenant.name}</td>
+                          <td className="px-6 py-4 text-slate-600">{monthStr}</td>
+                          <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">₹{row.payment.rent_amount.toLocaleString('en-IN')}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              row.payment.payment_status === 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {row.payment.payment_status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Link to={`/property/${row.property.property_id}`}>
+                              <Button size="sm" variant="outline" className="text-sm">View</Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-                    return (
-                      <tr key={row.payment.rent_id} className="hover:bg-slate-50">
-                        <td className="px-3 md:px-6 py-4 font-medium text-slate-900">
-                          <div className="truncate">{row.property.address}</div>
-                        </td>
-                        <td className="hidden sm:table-cell px-3 md:px-6 py-4 text-slate-600">
-                          {row.tenant.name}
-                        </td>
-                        <td className="hidden md:table-cell px-3 md:px-6 py-4 text-slate-600">
-                          {monthStr}
-                        </td>
-                        <td className="px-3 md:px-6 py-4 font-medium text-slate-900 whitespace-nowrap">
-                          ₹{row.payment.rent_amount.toLocaleString('en-IN')}
-                        </td>
-                        <td className="hidden sm:table-cell px-3 md:px-6 py-4">
-                          <span
-                            className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                              row.payment.payment_status === 'partial'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
-                          >
-                            {row.payment.payment_status}
-                          </span>
-                        </td>
-                        <td className="px-3 md:px-6 py-4">
-                          <Link to={`/property/${row.property.property_id}`}>
-                            <Button size="sm" variant="outline" className="text-xs md:text-sm">
-                              View
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-slate-200">
+                {pendingRents.map((row) => {
+                  const monthStr = new Date(row.payment.rent_month + 'T12:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                  return (
+                    <div key={row.payment.rent_id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 truncate">{row.property.address}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{row.tenant.name}</p>
+                        </div>
+                        <span className={`flex-shrink-0 px-2 py-1 rounded text-xs font-medium ${
+                          row.payment.payment_status === 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {row.payment.payment_status}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-slate-500">Month</p>
+                          <p className="text-sm font-medium text-slate-800">{monthStr}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500">Amount Due</p>
+                          <p className="text-sm font-bold text-red-600">₹{row.payment.rent_amount.toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+                      <Link to={`/property/${row.property.property_id}`} className="block">
+                        <Button size="sm" variant="outline" className="w-full text-xs mt-1">View Details →</Button>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
@@ -472,6 +567,16 @@ export default function AdminDashboard() {
           onSelect={handleGlobalReport}
           loading={generatingReport}
         />
+      )}
+
+      {/* Landlord Profile Modal */}
+      {landlordProfileOpen && (
+        <LandlordProfileModal onClose={() => setLandlordProfileOpen(false)} />
+      )}
+
+      {/* View Receipts Modal */}
+      {viewReceiptsOpen && (
+        <ViewReceiptsModal onClose={() => setViewReceiptsOpen(false)} />
       )}
     </div>
   );

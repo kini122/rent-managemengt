@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/useSupabase';
 import { PropertyCard } from '@/components/PropertyCard';
+import { PropertyViewModal } from '@/components/PropertyViewModal';
 import { isRLSError } from '@/lib/rls-check';
 import { Button } from '@/components/ui/button';
 import { Loader2, Settings, AlertCircle, BookOpen } from 'lucide-react';
+import type { PropertyWithTenant } from '@/types/index';
 
 export default function Home() {
   const { properties, loading, error } = useProperties();
+  const [selectedProperty, setSelectedProperty] = useState<PropertyWithTenant | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -107,12 +111,24 @@ export default function Home() {
             {/* Properties Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property) => (
-                <PropertyCard key={property.property_id} property={property} />
+                <PropertyCard 
+                  key={property.property_id} 
+                  property={property} 
+                  onClick={setSelectedProperty}
+                />
               ))}
             </div>
           </>
         )}
       </div>
+
+      {/* View-Only Modal */}
+      {selectedProperty && (
+        <PropertyViewModal 
+          property={selectedProperty} 
+          onClose={() => setSelectedProperty(null)} 
+        />
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 export interface TenancyDocumentsProps {
   tenancyId: number;
+  refreshKey?: string | number;
 }
 
 const DOCUMENT_TYPES = [
@@ -26,7 +27,7 @@ const DOCUMENT_TYPES = [
   "Other",
 ];
 
-export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
+export function TenancyDocuments({ tenancyId, refreshKey }: TenancyDocumentsProps) {
   const [documents, setDocuments] = useState<TenancyDocument[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,7 +35,7 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
 
   useEffect(() => {
     loadDocuments();
-  }, [tenancyId]);
+  }, [tenancyId, refreshKey]);
 
   const loadDocuments = async () => {
     try {
@@ -72,16 +73,46 @@ export function TenancyDocuments({ tenancyId }: TenancyDocumentsProps) {
 
   const handleDownload = async (doc: TenancyDocument) => {
     try {
+      toast.info("Preparing download...");
       const blob = await downloadTenancyDocument(doc);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = doc.file_name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success("Download started");
+      
+      // Convert document blob to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = (reader.result as string).split(',')[1];
+        
+        // Use server proxy for completely reliable file naming on mobile / PWAs
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/download';
+        form.target = '_blank';
+        
+        const inputBase64 = document.createElement('input');
+        inputBase64.type = 'hidden';
+        inputBase64.name = 'base64';
+        inputBase64.value = base64Data;
+        
+        const inputFilename = document.createElement('input');
+        inputFilename.type = 'hidden';
+        inputFilename.name = 'filename';
+        inputFilename.value = doc.file_name;
+        
+        const inputCt = document.createElement('input');
+        inputCt.type = 'hidden';
+        inputCt.name = 'contentType';
+        inputCt.value = doc.file_type || 'application/octet-stream';
+        
+        form.appendChild(inputBase64);
+        form.appendChild(inputFilename);
+        form.appendChild(inputCt);
+        
+        document.body.appendChild(form);
+        form.submit();
+        setTimeout(() => {
+          if (document.body.contains(form)) document.body.removeChild(form);
+        }, 1000);
+      };
+      reader.readAsDataURL(blob);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to download document",

@@ -53,7 +53,13 @@ export default function PropertyDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate("/");
+              }
+            }}
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -83,7 +89,13 @@ export default function PropertyDetail() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => {
+                if (window.history.length > 2) {
+                  navigate(-1);
+                } else {
+                  navigate("/");
+                }
+              }}
               className="whitespace-nowrap"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
@@ -134,7 +146,7 @@ export default function PropertyDetail() {
           />
 
           {/* Tenancy Documents - MOVED TO LAST */}
-          {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} />}
+          {tenancy && <TenancyDocuments tenancyId={tenancy.tenancy_id} refreshKey={rentPayments.length + "-" + Date.now()} />}
         </div>
 
         {/* Create Tenancy Modal */}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { ensureCurrentRentPayments } from '@/services/supabaseAdmin';
 import type { Property, PropertyWithTenant, Tenancy, Tenant, RentPayment } from '@/types/index';
 
 export function useProperties() {
@@ -9,6 +10,7 @@ export function useProperties() {
 
   const fetchProperties = async () => {
     try {
+      console.log('[useProperties] Starting fetch...');
       setLoading(true);
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
@@ -16,7 +18,12 @@ export function useProperties() {
         .eq('is_active', true)
         .order('property_id', { ascending: false });
 
-      if (propertiesError) throw propertiesError;
+      if (propertiesError) {
+        console.error('[useProperties] Error fetching properties:', propertiesError);
+        throw propertiesError;
+      }
+
+      console.log('[useProperties] Fetched', propertiesData?.length || 0, 'properties');
 
       const enrichedProperties: PropertyWithTenant[] = await Promise.all(
         (propertiesData || []).map(async (property) => {
@@ -29,28 +36,47 @@ export function useProperties() {
             .single();
 
           let pending_count = 0;
+          let pending_months: string[] = [];
           if (tenancyData) {
+            // Dynamically ensure rent payments exist for all due months
+            try {
+              await ensureCurrentRentPayments(
+                tenancyData.tenancy_id,
+                tenancyData.start_date,
+                tenancyData.monthly_rent,
+                tenancyData.end_date,
+              );
+            } catch (err) {
+              console.warn('[useProperties] Failed to sync rent payments for tenancy', tenancyData.tenancy_id, err);
+            }
+
             const { data: rentData } = await supabase
               .from('rent_payments')
-              .select('rent_id', { count: 'exact' })
+              .select('rent_id, rent_month')
               .eq('tenancy_id', tenancyData.tenancy_id)
-              .neq('payment_status', 'paid');
+              .neq('payment_status', 'paid')
+              .order('rent_month', { ascending: true });
 
             pending_count = rentData?.length || 0;
+            pending_months = rentData?.map(r => r.rent_month) || [];
           }
 
           return {
             ...property,
             tenancy: tenancyData || undefined,
             pending_count,
+            pending_months,
           };
         })
       );
 
       setProperties(enrichedProperties);
       setError(null);
+      console.log('[useProperties] Fetch completed successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch properties');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties';
+      console.error('[useProperties] Error:', errorMessage, err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -72,6 +98,7 @@ export function usePropertyDetail(propertyId: number) {
 
   const fetchData = async () => {
     try {
+      console.log('[usePropertyDetail] Starting fetch for property', propertyId);
       setLoading(true);
       const { data: propertyData, error: propertyError } = await supabase
         .from('properties')
@@ -79,7 +106,10 @@ export function usePropertyDetail(propertyId: number) {
         .eq('property_id', propertyId)
         .single();
 
-      if (propertyError) throw propertyError;
+      if (propertyError) {
+        console.error('[usePropertyDetail] Error fetching property:', propertyError);
+        throw propertyError;
+      }
       setProperty(propertyData);
 
       const { data: tenancyData, error: tenancyError } = await supabase
@@ -91,6 +121,21 @@ export function usePropertyDetail(propertyId: number) {
 
       if (tenancyData) {
         setTenancy(tenancyData);
+
+        // Dynamically ensure rent payments exist for all due months
+        try {
+          const newCount = await ensureCurrentRentPayments(
+            tenancyData.tenancy_id,
+            tenancyData.start_date,
+            tenancyData.monthly_rent,
+            tenancyData.end_date,
+          );
+          if (newCount > 0) {
+            console.log(`[usePropertyDetail] Auto-generated ${newCount} missing rent payment(s)`);
+          }
+        } catch (err) {
+          console.warn('[usePropertyDetail] Failed to sync rent payments:', err);
+        }
 
         const { data: paymentsData } = await supabase
           .from('rent_payments')
@@ -120,3 +165,4 @@ export function usePropertyDetail(propertyId: number) {
 
   return { property, tenancy, rentPayments, loading, error, refetch: fetchData };
 }
+

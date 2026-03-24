@@ -45,7 +45,7 @@ export function CreateTenancyModal({
     start_date: new Date().toISOString().split("T")[0],
     monthly_rent: "",
     advance_amount: "",
-    status: "active" as const,
+    status: "active" as "active" | "completed" | "terminated",
   });
 
   // Fetch existing tenants

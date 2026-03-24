@@ -3,8 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
+console.log('[Supabase Init] URL configured:', !!supabaseUrl);
+console.log('[Supabase Init] Key configured:', !!supabaseKey);
+
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('Missing Supabase configuration. Using placeholder values.');
+  console.error('ERROR: Missing Supabase configuration!');
+  console.error('VITE_SUPABASE_URL:', supabaseUrl);
+  console.error('VITE_SUPABASE_KEY:', supabaseKey);
 }
 
 export const supabase = createClient(
@@ -13,3 +18,5 @@ export const supabase = createClient(
 );
 
 export const isConfigured = !!(supabaseUrl && supabaseKey);
+
+console.log('[Supabase Init] Client created. Configured:', isConfigured);
